@@ -29,11 +29,15 @@
 
   /* Map blocks ---------------------------------------------------------- */
   .tty.plain { border: 0; background: transparent; padding: 0; }
+  /* Maps are 14-29 columns wide depending on level, so a fixed font size makes
+     the small ones tiny. fitMaps() scales each one to fill its container. */
   .preview {
     display: flex; align-items: center; justify-content: center;
-    min-height: 152px; overflow-x: auto;
+    min-height: 190px; overflow: hidden;
   }
-  .mapwrap { display: flex; justify-content: flex-start; }
+  .preview .tty { font-size: 11px; }
+  .mapwrap { display: flex; justify-content: center; }
+  .mapwrap .tty { font-size: 20px; line-height: 1.05; padding: calc(var(--step) * 4); }
 
   /* Legend -------------------------------------------------------------- */
   .legend { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 2) calc(var(--step) * 5); font-size: 11px; }
@@ -45,7 +49,9 @@
   #detail:focus-visible { outline: 2px solid hsl(var(--frost-2)); outline-offset: 2px; }
   .detail-cols { display: grid; gap: calc(var(--step) * 5); grid-template-columns: minmax(0, 1fr); }
   @media (min-width: 900px) {
-    .detail-cols { grid-template-columns: minmax(0, max-content) minmax(300px, 1fr); }
+    /* Give the map real estate rather than shrinking it to max-content, which
+       left it stranded in a narrow column with dead space underneath. */
+    .detail-cols { grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1fr); }
   }
 
   /* YouTube facade ------------------------------------------------------ */
@@ -325,6 +331,7 @@
       var b = elGrid.querySelector('button.lvl[data-id="' + state.open + '"]');
       if (b) b.setAttribute('aria-expanded', 'true');
     }
+    fitMaps();
   }
 
   // Facade only — no <iframe> is ever emitted here. The iframe is created in
@@ -426,6 +433,7 @@
     });
 
     bindVideo();
+    fitMaps();
   }
 
   /* -- video ------------------------------------------------------------ */
@@ -496,6 +504,36 @@
 
   /* -- flips ------------------------------------------------------------ */
 
+  // Scale each .tty map so it fills the width available to it. Measure at the
+  // element's current size, then scale by the ratio — accurate for any font,
+  // and avoids assuming a character-advance ratio.
+  function fitMaps() {
+    var maps = document.querySelectorAll('.preview .tty, .mapwrap .tty');
+    Array.prototype.forEach.call(maps, function (m) {
+      var box = m.parentNode;
+      var inPreview = box.classList.contains('preview');
+      var maxPx = inPreview ? 15 : 30;   // don't blow small maps up absurdly
+      var minPx = inPreview ? 7 : 11;
+
+      m.style.fontSize = '';             // reset so we measure the CSS default
+      var base = parseFloat(getComputedStyle(m).fontSize) || 13;
+      var pad = inPreview ? 0 : parseFloat(getComputedStyle(m).paddingLeft) * 2;
+      var natural = m.scrollWidth - pad; // width of the glyphs at `base`
+      var avail = box.clientWidth - pad;
+      if (!natural || !avail) return;
+
+      var size = base * (avail / natural);
+      size = Math.max(minPx, Math.min(maxPx, Math.floor(size * 10) / 10));
+      m.style.fontSize = size + 'px';
+    });
+  }
+
+  var fitPending;
+  window.addEventListener('resize', function () {
+    clearTimeout(fitPending);
+    fitPending = setTimeout(fitMaps, 120);
+  });
+
   function applyFlips() {
     btnH.setAttribute('aria-pressed', String(state.h));
     btnV.setAttribute('aria-pressed', String(state.v));
@@ -544,6 +582,14 @@
       renderGrid();
       var hash = (location.hash || '').replace(/^#/, '');
       if (hash) openDetail(hash, false);
+
+      // Keep browser back/forward in sync — a hash change is a same-document
+      // navigation, so nothing re-renders without this.
+      window.addEventListener('hashchange', function () {
+        var h = (location.hash || '').replace(/^#/, '');
+        if (!h) { closeDetail(false); return; }
+        if (h !== state.open) openDetail(h, false);
+      });
     })
     .catch(function (err) {
       elGrid.innerHTML = '<div class="empty">Could not load <code>/data/sokoban.json</code> &mdash; ' +

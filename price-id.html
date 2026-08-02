@@ -18,6 +18,15 @@
   .check { display: flex; align-items: center; gap: calc(var(--step) * 2); font-size: 12px; cursor: pointer; }
   .check.off { color: hsl(var(--text-2)); cursor: not-allowed; }
   .prob-cell { min-width: 116px; }
+  /* Randomized descriptions are struck through in spirit: they carry no signal. */
+  .appr-rand {
+    color: hsl(var(--text-2)); font-style: italic; opacity: 0.7;
+    cursor: help; font-size: 11px;
+  }
+  .appr-fixed {
+    color: hsl(var(--frost-1)); cursor: help;
+    border-bottom: 1px dotted hsl(var(--frost-1) / 0.4);
+  }
   .prob-num { font-size: 11px; color: hsl(var(--text-1)); }
   .deriv { font-size: 11px; color: hsl(var(--text-1)); }
   .deriv-branch { margin: calc(var(--step) * 2) 0 0; }
@@ -243,6 +252,23 @@
     var t = name.charAt(0).toUpperCase() + name.slice(1);
     return 'https://nethackwiki.com/wiki/' + encodeURIComponent(t.replace(/ /g, '_'))
       .replace(/%2F/g, '/');
+  }
+
+  // NetHack shuffles object descriptions at game start (shuffle_all() in
+  // src/o_init.c), so for those classes the appearance in the object table is
+  // an artifact of source ordering and tells the player nothing. Where an item
+  // is NOT in a shuffle range the description is permanent and is real
+  // identifying information — gem colors, tool "bag"/"horn", shield types, and
+  // in 3.7/5.0 the helm of brilliance's "crystal helmet".
+  function appearanceCell(it) {
+    if (it.shuffled) {
+      return '<span class="appr-rand" title="This description is randomized at the '
+        + 'start of every game, so it does not identify the item.">randomized</span>';
+    }
+    if (!it.appearance) return '<span class="dim">&mdash;</span>';
+    return '<span class="appr-fixed" title="This description is fixed &mdash; it is '
+      + 'never shuffled, so it is reliable identifying information.">'
+      + esc(it.appearance) + '</span>';
   }
 
   function el(id) { return document.getElementById(id); }
@@ -502,7 +528,7 @@
                   : 'base ' + it.cost + ', unaffected by enchantment') + '</div>'
               : '') + '</td>' +
           '<td class="dim">' + esc(CLASS_LABEL[it.class] || it.class) + '</td>' +
-          '<td class="dim">' + (it.appearance ? esc(it.appearance) : '—') + '</td>' +
+          '<td>' + appearanceCell(it) + '</td>' +
           '<td class="prob-cell">' + pct + bar + '</td>' +
         '</tr>';
       }).join('');
@@ -521,7 +547,7 @@
           '</div>' +
           '<div class="card-bd stack">' +
             '<div class="tbl-scroll"><table class="tbl">' +
-              '<thead><tr><th>Item</th><th>Class</th><th>Appearance</th>' +
+              '<thead><tr><th>Item</th><th>Class</th><th>Fixed appearance</th>' +
               '<th>Chance within class</th></tr></thead>' +
               '<tbody>' + rows + '</tbody>' +
             '</table></div>' +

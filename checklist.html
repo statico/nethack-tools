@@ -21,7 +21,10 @@
   }
   .item input[type='checkbox'] { margin-top: 3px; }
   .item .txt { flex: 1; min-width: 0; }
-  .item input:checked ~ .txt { color: hsl(var(--text-2)); }
+  /* Fade the whole line rather than recoloring it — a color change leaves the
+     wiki links at full strength, so a completed goal still reads as active. */
+  .item .txt { opacity: 1; transition: opacity 0.12s ease; }
+  .item input:checked ~ .txt { opacity: 0.45; }
   .item input:checked ~ .txt strong { font-weight: 500; }
 
   /* Progress readout in a card header */
@@ -84,7 +87,7 @@
       <div>
         <h1>Ascension Checklist</h1>
         <p class="dim" style="margin:4px 0 0">
-          Ian's checklist. Everything on this page is saved in your browser only —
+          statico's checklist. Everything on this page is saved in your browser only —
           nothing is uploaded.
         </p>
       </div>

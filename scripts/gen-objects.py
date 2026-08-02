@@ -7,6 +7,10 @@ Reads the object tables straight out of the NetHack git checkout:
     3.7      -> include/objects.h    (origin/NetHack-3.7)
     5.0      -> include/objects.h    (NetHack-5.0, working checkout)
 
+The per-object `shuffled` flag is derived from src/o_init.c of the matching
+branch (obj_shuffle_range() / shuffle_all() / init_objects()), and the script
+asserts that o_init.c still says what this code assumes.
+
 The tables are C preprocessor soup: every object is written as a call to a
 per-class macro (SCROLL(), WEAPON(), ...) which expands to OBJECT(...).  The
 argument order differs per class *and* per version, so nothing is hardcoded
@@ -36,6 +40,24 @@ SOURCES = OrderedDict(
         ("5.0", (None, "include/objects.h")),  # None = working tree
     )
 )
+O_INIT = "src/o_init.c"
+
+# Armor sub-ranges from obj_shuffle_range(): (enum symbol, object name) pairs.
+# The C code compares object indices, so the range is simply the table-order
+# slice between the two endpoints -- whatever happens to live in between.
+ARMOR_RANGES = [
+    (("HELMET", "helmet"), ("HELM_OF_TELEPATHY", "helm of telepathy")),
+    (("LEATHER_GLOVES", "leather gloves"),
+     ("GAUNTLETS_OF_DEXTERITY", "gauntlets of dexterity")),
+    (("CLOAK_OF_PROTECTION", "cloak of protection"),
+     ("CLOAK_OF_DISPLACEMENT", "cloak of displacement")),
+    (("SPEED_BOOTS", "speed boots"), ("LEVITATION_BOOTS", "levitation boots")),
+]
+# whole classes handed to shuffle_all(), with their obj_shuffle_range() rule
+WHOLE_CLASS_SHUFFLE = ["AMULET_CLASS", "POTION_CLASS", "RING_CLASS", "SCROLL_CLASS",
+                       "SPBOOK_CLASS", "WAND_CLASS", "VENOM_CLASS"]
+MAGIC_UNIQUE_STOP = {"AMULET_CLASS", "SCROLL_CLASS", "SPBOOK_CLASS"}
+FULL_RANGE = {"RING_CLASS", "WAND_CLASS", "VENOM_CLASS"}
 
 # macros that are helpers / not object definitions
 NON_OBJECT_MACROS = {"OBJ", "BITS", "HARDGEM", "COLOR_FIELD", "MARKER", "GENERIC"}
@@ -291,15 +313,29 @@ class Table(object):
 
         # ---- derive the slot mapping instead of assuming it ----
         self.idx = {k: self.object_params.index(k) for k in ("obj", "bits", "sym", "prob", "cost")}
-        self.mgc_idx = self.bits_params.index("mgc") if "mgc" in self.bits_params else None
+        if "sn" in self.object_params:
+            self.idx["sn"] = self.object_params.index("sn")
+        self.bits_idx = {}
+        for field in ("mgc", "uniq", "nmkn"):
+            if field not in self.bits_params:
+                raise SystemExit("%s: BITS() has no %r field: %r"
+                                 % (label, field, self.bits_params))
+            self.bits_idx[field] = self.bits_params.index(field)
 
     def describe_mapping(self):
-        return "OBJECT(%s)\n    prob -> slot %d, cost -> slot %d, sym -> slot %d, BITS mgc -> slot %s" % (
-            ",".join(self.object_params),
-            self.idx["prob"],
-            self.idx["cost"],
-            self.idx["sym"],
-            self.mgc_idx,
+        return (
+            "OBJECT(%s)\n    prob -> slot %d, cost -> slot %d, sym -> slot %d\n"
+            "  BITS(%s)\n    mgc -> slot %d, uniq -> slot %d, nmkn -> slot %d"
+            % (
+                ",".join(self.object_params),
+                self.idx["prob"],
+                self.idx["cost"],
+                self.idx["sym"],
+                ",".join(self.bits_params),
+                self.bits_idx["mgc"],
+                self.bits_idx["uniq"],
+                self.bits_idx["nmkn"],
+            )
         )
 
     # -- expansion ---------------------------------------------------------
@@ -372,13 +408,14 @@ class Table(object):
         if oclass == "other" and sym == "ILLOBJ_CLASS":
             return None                                   # "strange object"
 
-        magic = None
         bits_expr = fields[self.idx["bits"]]
-        if self.mgc_idx is not None and re.match(r"\s*BITS\s*\(", bits_expr):
-            bits_args, _ = split_args(bits_expr, bits_expr.index("("))
-            v = eval_int(bits_args[self.mgc_idx])
-            if v is not None:
-                magic = bool(v)
+        if not re.match(r"\s*BITS\s*\(", bits_expr):
+            raise SystemExit("%s: %r has no BITS(): %r" % (self.label, name, bits_expr))
+        bits_args, _ = split_args(bits_expr, bits_expr.index("("))
+        bits = {}
+        for field, slot in self.bits_idx.items():
+            bits[field] = eval_int(bits_args[slot])
+        magic = None if bits["mgc"] is None else bool(bits["mgc"])
 
         full = NAME_PREFIX.get(macro, "") + name
         cost = eval_int(fields[self.idx["cost"]])
@@ -396,7 +433,149 @@ class Table(object):
         rec["appearance"] = appearance
         if magic is not None:
             rec["magic"] = magic
+        rec["shuffled"] = False           # filled in by mark_shuffled()
+        # internal, stripped before output
+        rec["_sym"] = sym
+        rec["_unique"] = bool(bits["uniq"])
+        rec["_nmkn"] = bool(bits["nmkn"])
+        rec["_sn"] = fields[self.idx["sn"]].strip() if "sn" in self.idx else None
         return rec
+
+
+# --------------------------------------------------------------------------
+# shuffling (src/o_init.c)
+# --------------------------------------------------------------------------
+def check_o_init(text, label):
+    """Fail loudly if o_init.c no longer matches the rules implemented below."""
+    needed = [
+        (r"otyp\s*>=\s*HELMET\s*&&\s*otyp\s*<=\s*HELM_OF_TELEPATHY", "helm range"),
+        (r"otyp\s*>=\s*LEATHER_GLOVES\s*&&\s*otyp\s*<=\s*GAUNTLETS_OF_DEXTERITY",
+         "glove range"),
+        (r"otyp\s*>=\s*CLOAK_OF_PROTECTION\s*&&\s*otyp\s*<=\s*CLOAK_OF_DISPLACEMENT",
+         "cloak range"),
+        (r"otyp\s*>=\s*SPEED_BOOTS\s*&&\s*otyp\s*<=\s*LEVITATION_BOOTS", "boot range"),
+        (r"\*hi_p\s*=\s*POT_WATER\s*-\s*1", "potion stops before POT_WATER"),
+        (r"oc_unique\s*\|\|\s*!objects\[i\]\.oc_magic", "amulet/scroll/book stop rule"),
+        (r"case\s+RING_CLASS:\s*case\s+WAND_CLASS:\s*case\s+VENOM_CLASS:",
+         "ring/wand/venom whole class"),
+        (r"objects\[j\]\.oc_name_known", "shuffle() skips pre-known names"),
+        (r"num_to_shuffle\s*<\s*2", "shuffle() needs >= 2 members"),
+    ]
+    flat = re.sub(r"\s+", " ", strip_comments(text))
+    for pat, what in needed:
+        if not re.search(pat, flat):
+            raise SystemExit("%s: %s: o_init.c no longer matches assumption (%s)"
+                             % (label, O_INIT, what))
+    # does init_objects() normalise oc_name_known to "has no description"?
+    normalises = bool(re.search(r"!OBJ_DESCR\(objects\[i\]\)\s*\^\s*nmkn", flat))
+    # which classes get handed to shuffle_all()
+    m = re.search(r"shuffle_classes\[\]\s*=\s*\{([^}]*)\}", flat)
+    if not m:
+        raise SystemExit("%s: cannot find shuffle_classes[] in o_init.c" % label)
+    classes = [c.strip() for c in m.group(1).split(",") if c.strip()]
+    if sorted(classes) != sorted(WHOLE_CLASS_SHUFFLE):
+        raise SystemExit("%s: shuffle_classes[] changed: %r" % (label, classes))
+    m = re.search(r"shuffle_types\[\]\s*=\s*\{([^}]*)\}", flat)
+    types = [c.strip() for c in m.group(1).split(",") if c.strip()]
+    expected_types = [lo[0] for lo, _hi in ARMOR_RANGES]
+    if sorted(types) != sorted(expected_types):
+        raise SystemExit("%s: shuffle_types[] changed: %r" % (label, types))
+    return normalises
+
+
+def mark_shuffled(objs, label, normalises):
+    """Set rec['shuffled'] per src/o_init.c.  objs must be in table order."""
+    # objects of a class must be contiguous (init_objects() panics otherwise)
+    seen = []
+    for o in objs:
+        if not seen or seen[-1] != o["_sym"]:
+            if o["_sym"] in seen:
+                raise SystemExit("%s: class %s is not contiguous" % (label, o["_sym"]))
+            seen.append(o["_sym"])
+    spans = {}
+    for i, o in enumerate(objs):
+        lo, hi = spans.get(o["_sym"], (i, i))
+        spans[o["_sym"]] = (min(lo, i), max(hi, i))
+
+    in_range = set()
+
+    def add(lo, hi, what):
+        if lo > hi:
+            raise SystemExit("%s: empty shuffle range for %s (%d..%d)"
+                             % (label, what, lo, hi))
+        in_range.update(range(lo, hi + 1))
+
+    for sym in WHOLE_CLASS_SHUFFLE:
+        if sym not in spans:
+            raise SystemExit("%s: no objects of class %s" % (label, sym))
+        base, end = spans[sym]
+        if sym in FULL_RANGE:
+            add(base, end, sym)
+        elif sym == "POTION_CLASS":
+            water = [i for i in range(base, end + 1)
+                     if objs[i]["name"] == "potion of water"]
+            if len(water) != 1:
+                raise SystemExit("%s: expected exactly one potion of water" % label)
+            add(base, water[0] - 1, sym)          # *hi_p = POT_WATER - 1
+        elif sym in MAGIC_UNIQUE_STOP:
+            i = base
+            while i <= end:
+                if objs[i].get("magic") is None:
+                    raise SystemExit("%s: %r has no oc_magic" % (label, objs[i]["name"]))
+                if objs[i]["_unique"] or not objs[i]["magic"]:
+                    break
+                i += 1
+            if i > end:
+                raise SystemExit("%s: %s never hits a unique/non-magic entry" % (label, sym))
+            add(base, i - 1, sym)
+        else:
+            raise SystemExit("%s: unhandled shuffle class %s" % (label, sym))
+
+    by_name = {}
+    by_sn = {}
+    for i, o in enumerate(objs):
+        by_name.setdefault(o["name"], i)
+        if o["_sn"]:
+            by_sn.setdefault(o["_sn"], i)
+    for (lo_sn, lo_name), (hi_sn, hi_name) in ARMOR_RANGES:
+        for sn, nm in ((lo_sn, lo_name), (hi_sn, hi_name)):
+            if nm not in by_name:
+                raise SystemExit("%s: armor range endpoint %r missing" % (label, nm))
+            if sn in by_sn and by_sn[sn] != by_name[nm]:
+                raise SystemExit("%s: enum %s is not %r" % (label, sn, nm))
+        lo, hi = by_name[lo_name], by_name[hi_name]
+        if objs[lo]["_sym"] != "ARMOR_CLASS" or objs[hi]["_sym"] != "ARMOR_CLASS":
+            raise SystemExit("%s: armor range %s..%s is not armor" % (label, lo_sn, hi_sn))
+        if lo > hi:
+            raise SystemExit("%s: armor range %s(%d) > %s(%d)"
+                             % (label, lo_sn, lo, hi_sn, hi))
+        add(lo, hi, "%s..%s" % (lo_sn, hi_sn))
+
+    # shuffle() skips oc_name_known entries; init_objects() may first force
+    # oc_name_known to mean "this object has no alternate description"
+    def known(o):
+        return (o["appearance"] is None) if normalises else o["_nmkn"]
+
+    # each shuffled group is handled independently; a group with fewer than
+    # two shufflable members is left alone (shuffle(): num_to_shuffle < 2)
+    for o in objs:
+        o["shuffled"] = False
+    groups = []
+    for sym in WHOLE_CLASS_SHUFFLE:
+        groups.append([i for i in sorted(in_range) if objs[i]["_sym"] == sym])
+    for (lo_sn, lo_name), (hi_sn, hi_name) in ARMOR_RANGES:
+        groups.append(list(range(by_name[lo_name], by_name[hi_name] + 1)))
+    for grp in groups:
+        movable = [i for i in grp if not known(objs[i])]
+        if len(movable) < 2:
+            continue
+        for i in movable:
+            objs[i]["shuffled"] = True
+
+    # report where the raw table flag and the runtime normalisation disagree
+    odd = [o["name"] for o in objs
+           if o["_nmkn"] != (o["appearance"] is None)]
+    return odd
 
 
 # --------------------------------------------------------------------------
@@ -429,6 +608,28 @@ def check(ok, msg):
         failures.append(msg)
 
 
+SHUFFLE_CHECKS = [
+    ("potion of water", False),
+    ("potion of healing", True),
+    ("scroll of blank paper", False),
+    ("scroll of identify", True),
+    ("Amulet of Yendor", False),
+    ("amulet of life saving", True),
+    ("spellbook of blank paper", False),
+    ("Book of the Dead", False),
+    ("diamond", False),
+    ("worthless piece of white glass", False),
+    ("bag of holding", False),
+    ("sack", False),
+    ("helmet", True),
+    ("helm of telepathy", True),
+    ("dwarvish iron helm", False),
+    ("speed boots", True),
+    ("low boots", False),
+    ("plate mail", False),
+]
+
+
 def verify(key, objs):
     print("Verification [%s]:" % key)
     by_name = {o["name"]: o for o in objs}
@@ -448,6 +649,20 @@ def verify(key, objs):
             check(present(s), "contains %r" % s)
         check(present("enormous meatball"), "has 'enormous meatball'")
         check(not present("huge chunk of meat"), "does NOT have 'huge chunk of meat'")
+
+    for name, want in SHUFFLE_CHECKS:
+        o = by_name.get(name)
+        got = o["shuffled"] if o else "MISSING"
+        check(o is not None and o["shuffled"] is want,
+              "%s shuffled == %s (got %s)" % (name, want, got))
+    for cls in ("gem", "rock", "tool", "weapon", "food"):
+        bad = [o["name"] for o in objs if o["class"] == cls and o["shuffled"]]
+        check(not bad, "no %s is shuffled (offenders: %s)" % (cls, bad or "none"))
+    for cls in ("ring", "wand"):
+        bad = [o["name"] for o in objs if o["class"] == cls and not o["shuffled"]]
+        check(not bad, "every %s is shuffled (offenders: %s)" % (cls, bad or "none"))
+    nulls = [o["name"] for o in objs if o["appearance"] is None and o["shuffled"]]
+    check(not nulls, "no object without an appearance is shuffled (%s)" % (nulls or "none"))
 
 
 # --------------------------------------------------------------------------
@@ -473,6 +688,14 @@ def main():
         print("\n[%s] derived macro mapping from %s:" % (key, SOURCES[srckey][1]))
         print("  " + table.describe_mapping())
         objs = table.objects()
+        o_init = read_source(SOURCES[srckey][0], O_INIT)
+        normalises = check_o_init(o_init, label)
+        print("  %s: rules confirmed; oc_name_known normalised to "
+              "'has no description': %s" % (O_INIT, normalises))
+        odd = mark_shuffled(objs, label, normalises)
+        if odd:
+            print("  note: table nmkn flag disagrees with 'has a description' for: %s"
+                  % ", ".join(odd))
         datasets[key] = (label, objs)
 
     print()
@@ -480,14 +703,18 @@ def main():
     for key, (label, objs) in datasets.items():
         per = defaultdict(int)
         cnt = defaultdict(int)
+        shuf = defaultdict(int)
         for o in objs:
             per[o["class"]] += o["prob"]
             cnt[o["class"]] += 1
+            shuf[o["class"]] += 1 if o["shuffled"] else 0
         totals[key] = OrderedDict(sorted(per.items()))
-        print("Summary [%s] %d objects (%d priced):"
-              % (key, len(objs), sum(1 for o in objs if o["cost"] > 0)))
+        print("Summary [%s] %d objects (%d priced, %d shuffled):"
+              % (key, len(objs), sum(1 for o in objs if o["cost"] > 0),
+                 sum(1 for o in objs if o["shuffled"])))
         for c in sorted(cnt):
-            print("    %-10s %4d objects, prob total %5d" % (c, cnt[c], per[c]))
+            print("    %-10s %4d objects, prob total %5d, shuffled %3d / fixed %3d"
+                  % (c, cnt[c], per[c], shuf[c], cnt[c] - shuf[c]))
     print()
 
     for key, (label, objs) in datasets.items():
@@ -496,6 +723,11 @@ def main():
     if failures:
         print("\n%d VERIFICATION FAILURE(S) -- not writing output" % len(failures))
         return 1
+
+    for _label, objs in datasets.values():          # drop internal fields
+        for o in objs:
+            for k in [k for k in o if k.startswith("_")]:
+                del o[k]
 
     out = OrderedDict()
     out["generated_from"] = OrderedDict(
