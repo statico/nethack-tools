@@ -1,0 +1,7 @@
+# statico's NetHack Tools — https://nethack.statico.io
+# Everything here is public reference material. Crawl away.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://nethack.statico.io/sitemap.xml
