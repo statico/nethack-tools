@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NetHack Tools</title>
+<meta name="description" content="Player tools for NetHack 3.6, 3.7 and 5.0 — price identification calculator, Sokoban helper with solution videos, and a persistent ascension checklist.">
+<link rel="canonical" href="https://nethack.statico.io/">
+<meta property="og:title" content="NetHack Tools">
+<meta property="og:description" content="Price ID calculator, Sokoban helper, and ascension checklist for NetHack 3.6, 3.7 and 5.0.">
+<meta property="og:url" content="https://nethack.statico.io/">
+<meta property="og:type" content="website">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/smui.css">
+<style>
+  .masthead { padding: calc(var(--step) * 10) 0 calc(var(--step) * 6); }
+  .masthead .hero .tick { color: hsl(var(--frost-2)); }
+  .lede { max-width: 62ch; color: hsl(var(--text-1)); font-size: 14px; }
+  .tool { display: flex; flex-direction: column; text-decoration: none; color: inherit; height: 100%; }
+  .tool:hover { text-decoration: none; }
+  .tool .card-bd { flex: 1; display: flex; flex-direction: column; gap: calc(var(--step) * 2); }
+  .tool h2 { color: hsl(var(--frost-2)); }
+  .tool p { margin: 0; color: hsl(var(--text-1)); font-size: 12px; line-height: 1.65; }
+  .tool .go {
+    margin-top: auto; padding-top: calc(var(--step) * 3);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: hsl(var(--text-2));
+  }
+  .tool:hover .go { color: hsl(var(--frost-2)); }
+  .ver { display: flex; gap: calc(var(--step) * 2); flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div id="nav"></div>
+
+<main class="wrap page stack">
+
+  <header class="masthead stack">
+    <h1 class="hero"><span class="tick">&gt;</span> NetHack Tools</h1>
+    <p class="lede">
+      A small set of player tools for NetHack, built against the actual game source
+      rather than transcribed tables. Covers <strong>3.6</strong>, <strong>3.7</strong>
+      and <strong>5.0</strong>.
+    </p>
+    <div class="ver">
+      <span class="badge b-frost">3.6</span>
+      <span class="badge b-frost">3.7</span>
+      <span class="badge b-green">5.0</span>
+    </div>
+  </header>
+
+  <div class="grid grid-3">
+
+    <a class="card card-glow tool" href="/price-id">
+      <div class="card-hd">
+        <h2>Price ID</h2>
+        <span class="badge b-dim">Calculator</span>
+      </div>
+      <div class="card-bd">
+        <p>
+          Work out what an unidentified item is from its shop price. Replicates the
+          game's integer arithmetic exactly — including the rounding tweak, and the
+          artifact and angry-shopkeeper surcharges that land <em>after</em> rounding,
+          which most calculators get wrong.
+        </p>
+        <p>
+          Intersect two observations to narrow the answer, and rank candidates by how
+          often they actually generate.
+        </p>
+        <span class="go">Open calculator &rarr;</span>
+      </div>
+    </a>
+
+    <a class="card card-glow tool" href="/sokoban">
+      <div class="card-hd">
+        <h2>Sokoban</h2>
+        <span class="badge b-dim">Reference</span>
+      </div>
+      <div class="card-bd">
+        <p>
+          All eight levels, with maps rendered from the game's own level files. Click a
+          level for the full map and its solution video.
+        </p>
+        <p>
+          Horizontal and vertical flip toggles, so the map matches what you see in 3.7
+          and 5.0 — which mirror Sokoban levels at generation.
+        </p>
+        <span class="go">Open levels &rarr;</span>
+      </div>
+    </a>
+
+    <a class="card card-glow tool" href="/checklist">
+      <div class="card-hd">
+        <h2>Checklist</h2>
+        <span class="badge b-dim">Tracker</span>
+      </div>
+      <div class="card-bd">
+        <p>
+          Goals and ascension kit, with every item linked to its wiki article. Tracks
+          turns since your last prayer against the real
+          <code>rnz(350)</code> timeout.
+        </p>
+        <p>
+          Saves to your browser. Nothing is uploaded anywhere. Export and import as JSON.
+        </p>
+        <span class="go">Open checklist &rarr;</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="note">
+    Data is generated directly from the
+    <a href="https://github.com/NetHack/NetHack" rel="noopener">NetHack source</a>
+    and the
+    <a href="https://nethackwiki.com/" rel="noopener">NetHackWiki</a>
+    database dump — object tables and prices from <code>objects.h</code>, Sokoban maps
+    from <code>dat/soko*.lua</code>. The generator scripts are in the repo, so the
+    numbers are reproducible rather than hand-copied.
+  </div>
+
+</main>
+
+<footer class="footer wrap">
+  <div class="spread">
+    <span>Not affiliated with the NetHack DevTeam.</span>
+    <span><a href="https://github.com/statico/nethack-tools" rel="noopener">Source on GitHub</a></span>
+  </div>
+</footer>
+
+<script src="/assets/nav.js"></script>
+</body>
+</html>

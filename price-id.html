@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Price ID Calculator — NetHack Tools</title>
+<meta name="description" content="Reverse NetHack shop prices back to base costs and candidate items. Exact integer replication of get_cost() and set_cost(), for NetHack 3.6, 3.7 and 5.0. Intersect multiple observations to narrow the answer.">
+<link rel="canonical" href="https://nethack.statico.io/price-id">
+<meta property="og:title" content="Price ID Calculator — NetHack Tools">
+<meta property="og:description" content="Reverse NetHack shop prices back to base costs and candidate items, for 3.6, 3.7 and 5.0. Intersect multiple observations to narrow the answer.">
+<meta property="og:url" content="https://nethack.statico.io/price-id"><meta property="og:type" content="website">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/smui.css">
+<style>
+  /* Page-local only. Colors come from smui.css custom properties. */
+  .chips { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 1.5); }
+  .obs { border-left: 2px solid hsl(var(--frost-3) / 0.5); }
+  .obs-n { color: hsl(var(--frost-2)); font-weight: 600; }
+  .checks { display: flex; flex-direction: column; gap: calc(var(--step) * 2); }
+  .check { display: flex; align-items: center; gap: calc(var(--step) * 2); font-size: 12px; cursor: pointer; }
+  .check.off { color: hsl(var(--text-2)); cursor: not-allowed; }
+  .prob-cell { min-width: 116px; }
+  .prob-num { font-size: 11px; color: hsl(var(--text-1)); }
+  .deriv { font-size: 11px; color: hsl(var(--text-1)); }
+  .deriv-branch { margin: calc(var(--step) * 2) 0 0; }
+  .deriv-step { padding-left: calc(var(--step) * 4); color: hsl(var(--text-2)); }
+  .deriv-step::before { content: '· '; color: hsl(var(--frost-2)); }
+  .bigwrap { max-width: 200px; }
+  .sum { display: flex; gap: calc(var(--step) * 10); flex-wrap: wrap; align-items: flex-end; }
+  .sum .stat { color: hsl(var(--frost-2)); line-height: 1; }
+  .grp-hd { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--step) * 3); flex-wrap: wrap; }
+  .base-n { font-size: 15px; font-weight: 600; color: hsl(var(--text-0)); }
+  .lookalikes { column-width: 190px; margin: calc(var(--step) * 2) 0 0; padding-left: 1.1em; }
+  .lookalikes li { font-size: 11px; }
+</style>
+</head><body>
+<div id="nav"></div>
+
+<main class="wrap page stack">
+
+  <header class="stack">
+    <div class="row">
+      <h1>Price identification</h1>
+      <span class="badge b-frost">3.6 · 3.7 · 5.0</span>
+    </div>
+    <p class="mid" style="max-width:70ch">
+      Work a shop price backwards to the base costs that could have produced it, then to the
+      items that carry those base costs. The arithmetic is a straight port of
+      <code>get_cost()</code> and <code>set_cost()</code> from <code>src/shk.c</code> — integer
+      division, round-half-up, artifact and anger surcharges applied <em>after</em> the rounding,
+      which is where most price calculators drift.
+    </p>
+  </header>
+
+  <!-- ===================== settings ===================== -->
+  <section class="card">
+    <div class="card-hd"><span class="label">Item &amp; version</span></div>
+    <div class="card-bd grid grid-3">
+      <div class="field">
+        <span class="label">Object table</span>
+        <div class="seg" id="ver" role="group" aria-label="NetHack version">
+          <button class="btn" data-ver="3.6" aria-pressed="false">NetHack 3.6</button>
+          <button class="btn" data-ver="3.7-5.0" aria-pressed="true">NetHack 3.7 / 5.0</button>
+        </div>
+        <span class="small dim">3.7 and 5.0 ship identical object tables, so they share one dataset.</span>
+      </div>
+
+      <div class="field">
+        <label class="label" for="ench">Enchantment (+N)</label>
+        <input type="number" id="ench" min="0" max="20" step="1" value="0">
+        <span class="small dim">Weapons and armor add 10 × N to base cost when N &gt; 0. Negative enchantment costs nothing.</span>
+      </div>
+
+      <div class="field">
+        <span class="label">Object classes</span>
+        <div class="chips" id="classes"></div>
+        <div class="row" style="gap:calc(var(--step)*2)">
+          <button class="btn" id="cls-all">All</button>
+          <button class="btn" id="cls-none">None</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== observations ===================== -->
+  <section class="stack">
+    <div class="spread">
+      <h2>Observations</h2>
+      <button class="btn" id="add-obs">+ Add observation</button>
+    </div>
+    <p class="small dim" style="margin:0">
+      One price rarely pins an item down. Add a second reading — the sell price for the same item,
+      or the same item quoted at another shop or another Charisma — and the candidate sets are
+      intersected.
+    </p>
+    <div class="grid grid-2" id="obs-list"></div>
+  </section>
+
+  <!-- ===================== results ===================== -->
+  <section id="results" class="stack"></section>
+
+  <!-- ===================== caveats ===================== -->
+  <section class="card">
+    <div class="card-hd"><span class="label">How this works &amp; what it cannot tell you</span></div>
+    <div class="card-bd stack">
+      <p style="margin:0">
+        Price identification narrows an item to a <strong>base-cost bucket</strong>, never to a
+        single item. Base cost 100 alone covers dozens of objects. Combine the bucket with what
+        you already know — the object class, the appearance, what you have already identified —
+        and, where possible, with a second observation.
+      </p>
+      <details>
+        <summary>The algorithm, exactly</summary>
+        <div class="deriv stack" style="gap:calc(var(--step)*2)">
+          <p style="margin:0"><strong>Buying (<code>get_cost</code>)</strong> — base cost, 0 becomes 5;
+          a 1-in-4 unidentified surcharge (×4/3, keyed off the object's ID, unknowable to you);
+          then at most one of dunce cap / Tourist below XL14 / visible tourist shirt (×4/3, they are
+          <em>if&nbsp;/&nbsp;else-if</em> in the C, so they never stack); then the Charisma ladder;
+          then the rounding tweak
+          <code>tmp = floor((floor(tmp×10 / divisor) + 5) / 10)</code>; clamp up to 1; then
+          artifact ×4; then the angry-shopkeeper <code>+ floor((tmp+2)/3)</code>. Those last two
+          land <em>after</em> the rounding, on purpose.</p>
+          <p style="margin:0"><strong>Selling (<code>set_cost</code>)</strong> — the shopkeeper keeps
+          half (÷2), or two thirds (÷3) if you look like a rube; a separate 1-in-4 markdown (×3/4,
+          keyed off the shopkeeper's ID, and only when base cost &gt; 1); the same rounding tweak;
+          never rounded down to zero. Charisma and shopkeeper anger do not affect what you are
+          offered.</p>
+          <p style="margin:0">The reverse lookup brute-forces every base cost from 1 to 30000
+          forward through the algorithm along both branches of the unknowable surcharge and keeps
+          exact matches. It does not try to invert the arithmetic — round-half-up is not
+          invertible.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Probability footnotes</summary>
+        <div class="deriv stack" style="gap:calc(var(--step)*2)">
+          <p style="margin:0">Percentages are the item's generation probability
+          <em>within its own object class</em>, using the class totals from the object table as
+          the denominator — never a hardcoded 1000. In 5.0 the weapon probabilities sum to
+          <strong>1002</strong>, because silver mace was added without rebalancing the rest.</p>
+          <p style="margin:0">In <strong>3.6</strong> every ring carries <code>prob 0</code> in
+          <code>objects.c</code> — that is genuinely what the table says; the ring class is filled
+          by picking uniformly instead. Ring probabilities for 3.6 are therefore shown as a uniform
+          1/28 and marked <span class="badge b-dim">uniform</span>. 3.7 and 5.0 give every ring an
+          explicit probability of 1.</p>
+          <p style="margin:0">The <code>other</code> class lumps several C object classes together
+          (coins, iron balls, chains, venom), so its total is not a meaningful denominator and no
+          probability is shown for it.</p>
+          <p style="margin:0">Objects with base cost 0 are kept in the data so the denominators stay
+          right, but they are never offered as candidates.</p>
+        </div>
+      </details>
+      <p class="small dim" id="src-note" style="margin:0"></p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer wrap">
+  <div class="spread">
+    <span>Object tables generated from the NetHack source. Pricing ported from <code>src/shk.c</code>.</span>
+    <span><a href="https://nethackwiki.com/wiki/Price_identification" class="wiki" target="_blank" rel="noopener">Price identification on NetHackWiki</a></span>
+  </div>
+</footer>
+
+<script src="/assets/nav.js"></script>
+<script src="/assets/price-engine.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var E = window.PriceEngine;
+
+  var CLASS_LABEL = {
+    weapon: 'weapon', armor: 'armor', ring: 'ring', amulet: 'amulet', tool: 'tool',
+    food: 'food', potion: 'potion', scroll: 'scroll', spellbook: 'spellbook',
+    wand: 'wand', gem: 'gem', rock: 'rock', other: 'other'
+  };
+  var CLASS_ORDER = ['weapon', 'armor', 'ring', 'amulet', 'tool', 'food', 'potion',
+    'scroll', 'spellbook', 'wand', 'gem', 'rock', 'other'];
+
+  var DATA = null;
+  var nextId = 1;
+
+  var state = {
+    version: '3.7-5.0',
+    ench: 0,
+    classes: null, /* Set-like object; null = all */
+    obs: [newObs()]
+  };
+
+  function newObs() {
+    return {
+      id: nextId++,
+      price: '',
+      direction: 'buy',
+      cha: 11,
+      touristy: false,
+      dunce: false,
+      angry: false
+    };
+  }
+
+  /* ---------- helpers ---------- */
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function wikiUrl(name) {
+    var t = name.charAt(0).toUpperCase() + name.slice(1);
+    return 'https://nethackwiki.com/wiki/' + encodeURIComponent(t.replace(/ /g, '_'))
+      .replace(/%2F/g, '/');
+  }
+
+  function el(id) { return document.getElementById(id); }
+
+  function activeObjects() {
+    return DATA.versions[state.version].objects;
+  }
+  function totals() {
+    return DATA.class_prob_totals[state.version];
+  }
+  var countsCache = {};
+  function classCounts() {
+    if (countsCache[state.version]) return countsCache[state.version];
+    var c = {};
+    activeObjects().forEach(function (o) { c[o.class] = (c[o.class] || 0) + 1; });
+    countsCache[state.version] = c;
+    return c;
+  }
+  function classOn(cls) {
+    return !state.classes || state.classes[cls];
+  }
+
+  /* ---------- render: class chips ---------- */
+
+  function renderClasses() {
+    var counts = classCounts();
+    el('classes').innerHTML = CLASS_ORDER.filter(function (c) { return counts[c]; })
+      .map(function (c) {
+        var on = classOn(c);
+        return '<button class="btn" data-cls="' + c + '" aria-pressed="' + on + '">' +
+          esc(CLASS_LABEL[c]) + '</button>';
+      }).join('');
+  }
+
+  /* ---------- render: observations ---------- */
+
+  function renderObs() {
+    el('obs-list').innerHTML = state.obs.map(function (o, i) {
+      var sell = o.direction === 'sell';
+      return '' +
+      '<div class="card obs" data-obs="' + o.id + '">' +
+        '<div class="card-hd">' +
+          '<span class="label">Observation <span class="obs-n">' + (i + 1) + '</span></span>' +
+          (state.obs.length > 1
+            ? '<button class="btn btn-danger" data-act="rm" data-obs="' + o.id + '">Remove</button>'
+            : '<span class="small dim">shop reading</span>') +
+        '</div>' +
+        '<div class="card-bd stack">' +
+          '<div class="row" style="align-items:flex-end">' +
+            '<div class="field bigwrap">' +
+              '<label class="label" for="p' + o.id + '">Observed price</label>' +
+              '<input class="big" type="number" min="0" step="1" id="p' + o.id + '" ' +
+                'data-obs="' + o.id + '" data-k="price" value="' + esc(o.price) + '" ' +
+                'placeholder="0" inputmode="numeric">' +
+            '</div>' +
+            '<div class="field" style="flex:1;min-width:170px">' +
+              '<span class="label">Charisma</span>' +
+              '<input type="number" min="3" max="25" step="1" ' +
+                'data-obs="' + o.id + '" data-k="cha" value="' + o.cha + '"' +
+                (sell ? ' disabled' : '') + '>' +
+              (sell ? '<span class="small dim">Charisma does not affect sell prices.</span>' : '') +
+            '</div>' +
+          '</div>' +
+
+          '<div class="field">' +
+            '<span class="label">Direction</span>' +
+            '<div class="seg" role="group" aria-label="Direction">' +
+              '<button class="btn" data-act="dir" data-obs="' + o.id + '" data-v="buy" ' +
+                'aria-pressed="' + (!sell) + '">Shk sells to me</button>' +
+              '<button class="btn" data-act="dir" data-obs="' + o.id + '" data-v="sell" ' +
+                'aria-pressed="' + sell + '">Shk buys from me</button>' +
+            '</div>' +
+            '<span class="small dim">' + (sell
+              ? 'Sell price — what the shopkeeper offers you for it.'
+              : 'Buy price — what you are quoted to buy it.') + '</span>' +
+          '</div>' +
+
+          '<div class="checks">' +
+            check(o, 'touristy', 'Tourist below XL14, or visible tourist shirt', false) +
+            check(o, 'dunce', 'Wearing a dunce cap', false) +
+            check(o, 'angry', 'Shopkeeper is angry (surcharge)', sell) +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function check(o, key, label, disabled) {
+    var id = 'c' + key + o.id;
+    return '<label class="check' + (disabled ? ' off' : '') + '" for="' + id + '">' +
+      '<input type="checkbox" id="' + id + '" data-obs="' + o.id + '" data-k="' + key + '"' +
+      (o[key] && !disabled ? ' checked' : '') + (disabled ? ' disabled' : '') + '>' +
+      '<span>' + esc(label) + (disabled ? ' — selling only, no anger surcharge' : '') + '</span>' +
+    '</label>';
+  }
+
+  function findObs(id) {
+    id = Number(id);
+    for (var i = 0; i < state.obs.length; i++) if (state.obs[i].id === id) return state.obs[i];
+    return null;
+  }
+
+  /* ---------- compute ---------- */
+
+  function obsQuery(o) {
+    return {
+      price: parseInt(o.price, 10),
+      direction: o.direction,
+      cha: o.direction === 'sell' ? 11 : o.cha,
+      touristy: o.touristy,
+      dunce: o.dunce,
+      angry: o.direction === 'sell' ? false : o.angry
+    };
+  }
+
+  function compute() {
+    if (!DATA) return;
+
+    var live = state.obs.filter(function (o) {
+      return o.price !== '' && isFinite(parseInt(o.price, 10)) && parseInt(o.price, 10) >= 0;
+    });
+
+    if (!live.length) {
+      el('results').innerHTML =
+        '<div class="card"><div class="empty">Enter an observed price to begin.</div></div>';
+      return;
+    }
+
+    var queries = live.map(obsQuery);
+    var perObs = queries.map(function (q) { return E.reverse(q); });
+    var bases = E.intersect(perObs);
+
+    /* branch info per base, per observation */
+    var branchMap = perObs.map(function (list) {
+      var m = {};
+      list.forEach(function (r) { m[r.base] = r.branches; });
+      return m;
+    });
+
+    var objs = activeObjects();
+    var t = totals();
+    var counts = classCounts();
+    var ench = state.ench;
+
+    var groups = [];
+    var totalItems = 0;
+    var classesSeen = {};
+    var emptyBases = [];
+
+    bases.forEach(function (b) {
+      var items = E.itemsForBase(objs, b, ench).filter(function (it) { return classOn(it.class); });
+      if (!items.length) { emptyBases.push(b); return; }
+      items = items.map(function (it) {
+        var p = E.classProbability(it, t, counts);
+        classesSeen[it.class] = true;
+        return { item: it, p: p };
+      }).sort(function (a, b2) {
+        return (b2.p.known ? b2.p.pct : -1) - (a.p.known ? a.p.pct : -1);
+      });
+      totalItems += items.length;
+      groups.push({
+        base: b,
+        items: items,
+        score: items.reduce(function (mx, r) { return Math.max(mx, r.p.known ? r.p.pct : 0); }, 0)
+      });
+    });
+
+    groups.sort(function (a, b2) { return b2.score - a.score || a.base - b2.base; });
+
+    var maxPct = groups.reduce(function (mx, g) { return Math.max(mx, g.score); }, 0) || 1;
+
+    renderResults(groups, totalItems, bases, perObs, branchMap, queries, maxPct, classesSeen,
+      emptyBases);
+  }
+
+  /* ---------- render: results ---------- */
+
+  function renderResults(groups, totalItems, bases, perObs, branchMap, queries, maxPct, classesSeen,
+                         emptyBases) {
+    var out = [];
+    var n = queries.length;
+
+    /* --- summary --- */
+    var intersectLine = '';
+    if (n > 1) {
+      intersectLine = queries.map(function (q, i) {
+        return 'Observation ' + (i + 1) + ' (' + perObs[i].length + ')';
+      }).join(' ∩ ') + ' → <strong>' + bases.length + '</strong> base cost' +
+        (bases.length === 1 ? '' : 's');
+    }
+
+    out.push(
+      '<div class="card card-glow"><div class="card-hd">' +
+        '<span class="label">Result</span>' +
+        '<span class="small dim">' + (n > 1 ? n + ' observations intersected' : 'single observation') + '</span>' +
+      '</div><div class="card-bd stack">' +
+        '<div class="sum">' +
+          '<div><div class="stat">' + totalItems + '</div>' +
+            '<div class="label">candidate' + (totalItems === 1 ? '' : 's') + '</div></div>' +
+          '<div><div class="stat">' + groups.length + '</div>' +
+            '<div class="label">base cost bucket' + (groups.length === 1 ? '' : 's') + '</div></div>' +
+        '</div>' +
+        (intersectLine ? '<div class="small mid">' + intersectLine + '</div>' : '') +
+        (emptyBases && emptyBases.length && groups.length
+          ? '<div class="small dim">Base cost' + (emptyBases.length === 1 ? ' ' : 's ') +
+            emptyBases.join(', ') + ' also produce' + (emptyBases.length === 1 ? 's' : '') +
+            ' this price, but no object in the current class filter costs that much.</div>'
+          : '') +
+        (totalItems === 1
+          ? '<div class="note">Exactly one item fits — but that is a property of this price, not a guarantee. Double-check the object class and appearance before you drink it.</div>'
+          : totalItems > 1
+            ? '<div class="note">Price identification yields a <strong>bucket</strong>, not an answer. ' +
+              totalItems + ' items share these base costs; narrow it with the class filter or a second observation.</div>'
+            : '') +
+      '</div></div>'
+    );
+
+    /* --- nothing found --- */
+    if (!groups.length) {
+      out.push('<div class="card"><div class="empty">' +
+        (bases.length
+          ? 'Base cost' + (bases.length === 1 ? ' ' : 's ') + bases.join(', ') +
+            ' fit' + (bases.length === 1 ? 's' : '') + ' the price, but no object in this class filter has that cost. Widen the class filter or reset the enchantment.'
+          : 'No base cost between 1 and ' + E.MAX_BASE + ' produces ' +
+            (n > 1 ? 'all of these prices' : 'this price') +
+            ' with these settings. Check the Charisma, the direction, and the modifier checkboxes.') +
+        '</div></div>');
+      out.push(warnings(classesSeen, queries));
+      el('results').innerHTML = out.join('');
+      return;
+    }
+
+    out.push(warnings(classesSeen, queries));
+
+    /* --- groups --- */
+    groups.forEach(function (g) {
+      var rows = g.items.map(function (r) {
+        var it = r.item, p = r.p;
+        var pct, bar;
+        if (!p.known) {
+          pct = '<span class="dim">—</span>';
+          bar = '';
+        } else {
+          pct = '<span class="prob-num">' + p.pct.toFixed(p.pct < 1 ? 2 : 1) + '%</span>' +
+            (p.uniform ? ' <span class="badge b-dim">uniform</span>' : '');
+          bar = '<div class="meter"><span style="width:' +
+            Math.max(2, Math.round((p.pct / maxPct) * 100)) + '%"></span></div>';
+        }
+        var bumped = E.effectiveBase(it, state.ench) !== it.cost;
+        return '<tr>' +
+          '<td><a class="wiki" href="' + wikiUrl(it.name) + '" target="_blank" rel="noopener">' +
+            esc(it.name) + '</a>' +
+            (it.magic ? ' <span class="badge b-purple">magic</span>' : '') +
+            (state.ench > 0
+              ? '<div class="small dim">' + (bumped
+                  ? 'base ' + it.cost + ' + 10×' + state.ench
+                  : 'base ' + it.cost + ', unaffected by enchantment') + '</div>'
+              : '') + '</td>' +
+          '<td class="dim">' + esc(CLASS_LABEL[it.class] || it.class) + '</td>' +
+          '<td class="dim">' + (it.appearance ? esc(it.appearance) : '—') + '</td>' +
+          '<td class="prob-cell">' + pct + bar + '</td>' +
+        '</tr>';
+      }).join('');
+
+      out.push(
+        '<div class="card card-glow">' +
+          '<div class="card-hd grp-hd">' +
+            '<span class="base-n">base cost ' + g.base +
+              (state.ench > 0
+                ? ' <span class="small dim">effective — weapons and armor include +' +
+                  state.ench + '</span>'
+                : '') +
+            '</span>' +
+            '<span class="badge b-frost">' + g.items.length + ' item' +
+              (g.items.length === 1 ? '' : 's') + '</span>' +
+          '</div>' +
+          '<div class="card-bd stack">' +
+            '<div class="tbl-scroll"><table class="tbl">' +
+              '<thead><tr><th>Item</th><th>Class</th><th>Appearance</th>' +
+              '<th>Chance within class</th></tr></thead>' +
+              '<tbody>' + rows + '</tbody>' +
+            '</table></div>' +
+            derivation(g.base, queries, branchMap) +
+          '</div>' +
+        '</div>'
+      );
+    });
+
+    el('results').innerHTML = out.join('');
+  }
+
+  /* --- per-base derivation, honest about ambiguity --- */
+  function derivation(base, queries, branchMap) {
+    var blocks = queries.map(function (q, i) {
+      var branches = branchMap[i][base] || [];
+      var both = branches.length === 2;
+      var head = 'Observation ' + (i + 1) + ' — ' +
+        (q.direction === 'sell' ? 'sold for ' : 'quoted at ') + q.price + ' zorkmids' +
+        (q.direction === 'buy' ? ' at Cha ' + q.cha : '');
+      var verdict = both
+        ? 'matches <strong>both</strong> with and without the 1-in-4 unidentified adjustment — ambiguous.'
+        : branches[0] && branches[0].surcharge
+          ? 'matches <strong>only</strong> when the 1-in-4 unidentified adjustment fired (about 25% of items).'
+          : 'matches <strong>only</strong> without the 1-in-4 unidentified adjustment (about 75% of items).';
+
+      var steps = branches.map(function (b) {
+        var ex = E.explain(base, q, b.surcharge);
+        return '<div class="deriv-branch">' +
+          '<span class="mid">' + (b.surcharge ? 'with' : 'without') + ' the unidentified adjustment → ' +
+          ex.price + '</span>' +
+          ex.steps.map(function (s) { return '<div class="deriv-step">' + esc(s) + '</div>'; }).join('') +
+        '</div>';
+      }).join('');
+
+      return '<div class="deriv-branch"><span class="mid">' + esc(head) + '</span> — ' + verdict +
+        steps + '</div>';
+    }).join('');
+
+    return '<details><summary>Show derivation for base cost ' + base + '</summary>' +
+      '<div class="deriv">' + blocks + '</div></details>';
+  }
+
+  /* --- special-case warnings --- */
+  function warnings(classesSeen, queries) {
+    var w = [];
+    var anySell = queries.some(function (q) { return q.direction === 'sell'; });
+
+    if (queries.some(function (q) { return q.price === 0; })) {
+      w.push('<div class="note note-warn"><strong>A price of 0 means base cost 0.</strong> ' +
+        'Nothing in the object table with a nonzero cost can be offered at 0, so the item is one ' +
+        'of the base-cost-0 cases: an uncursed potion of water, a cancelled or empty wand ' +
+        '(<code>spe == −1</code>), a partly eaten comestible, or a worthless piece of glass. ' +
+        'Those are excluded from the candidate list below by design.</div>');
+    }
+
+    if (classesSeen.gem) {
+      w.push('<div class="note note-warn"><strong>Gems are a trap.</strong> An unidentified ' +
+        '<em>glass</em> gem is not priced at its own worthless cost — <code>get_cost()</code> ' +
+        'substitutes the cost of one of two valuable lookalikes of the same color, chosen once ' +
+        'per game from <code>ubirthday</code>. A gem price therefore tells you the color group ' +
+        'and nothing more: the stone is either the valuable gem or the worthless glass of that ' +
+        'color, with no way to tell from price alone.' +
+        '<ul class="lookalikes">' +
+          E.GLASS_LOOKALIKES.map(function (g) {
+            return '<li><span class="dim">' + esc(g.color) + ':</span> ' +
+              esc(g.gems[0]) + ' or ' + esc(g.gems[1]) + ' (or worthless glass)</li>';
+          }).join('') +
+        '</ul></div>');
+      if (anySell) {
+        w.push('<div class="note note-warn"><strong>Selling a gem tells you nothing at all.</strong> ' +
+          'In <code>set_cost()</code>, an unidentified gemstone or glass is bought for a flat ' +
+          '<code>((otyp − first gem) % (6 − m_id % 3)) + 3</code> zorkmids — between 3 and 8, ' +
+          'varying by shopkeeper, unrelated to value. Any sell-side result for a gem below is ' +
+          'the plain formula and does not apply.</div>');
+      }
+    }
+
+    if (classesSeen.food) {
+      w.push('<div class="note note-warn"><strong>Food prices move.</strong> When you are Hungry ' +
+        'or worse, the buy price is multiplied by your hunger state (2× Hungry, 3× Weak, ' +
+        '4× Fainting). A partly eaten item prices at 0. Comestibles also take a corpse/tin ' +
+        'adjustment. Price-ID food on a full stomach.</div>');
+    }
+
+    if (classesSeen.wand) {
+      w.push('<div class="note"><strong>Cancelled and empty wands price at 0.</strong> A wand with ' +
+        '<code>spe == −1</code> has base cost 0, which the shopkeeper quotes as if it were 5. ' +
+        'A suspiciously cheap wand is a wrested-out or cancelled one, not a cheap type.</div>');
+    }
+
+    if (classesSeen.potion) {
+      w.push('<div class="note"><strong>Uncursed water prices at 0.</strong> An uncursed potion of ' +
+        'water has base cost 0 (quoted as 5, sells for nothing). Blessed and cursed water price ' +
+        'normally at 100.</div>');
+    }
+
+    if ((classesSeen.weapon || classesSeen.armor) && state.ench === 0) {
+      w.push('<div class="note"><strong>Enchantment shifts weapon and armor prices.</strong> ' +
+        'A positive <code>+N</code> adds 10 × N to the base cost before any of this arithmetic. ' +
+        'If the item might be enchanted, set the enchantment field above and re-read the ' +
+        'candidates.</div>');
+    }
+
+    if (classesSeen.tool) {
+      w.push('<div class="note"><strong>Partly burnt candles are half price.</strong> A candle whose ' +
+        'remaining life is below 20 × its base cost is priced at half, so a used candle looks ' +
+        'like a different tool.</div>');
+    }
+
+    return w.join('');
+  }
+
+  /* ---------- events ---------- */
+
+  el('ver').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-ver]');
+    if (!b) return;
+    state.version = b.getAttribute('data-ver');
+    Array.prototype.forEach.call(this.querySelectorAll('button'), function (x) {
+      x.setAttribute('aria-pressed', String(x === b));
+    });
+    renderClasses();
+    compute();
+  });
+
+  el('ench').addEventListener('input', function () {
+    var v = parseInt(this.value, 10);
+    state.ench = isFinite(v) && v > 0 ? v : 0;
+    compute();
+  });
+
+  el('classes').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-cls]');
+    if (!b) return;
+    var counts = classCounts();
+    if (!state.classes) {
+      state.classes = {};
+      Object.keys(counts).forEach(function (c) { state.classes[c] = true; });
+    }
+    var c = b.getAttribute('data-cls');
+    state.classes[c] = !state.classes[c];
+    b.setAttribute('aria-pressed', String(!!state.classes[c]));
+    compute();
+  });
+
+  el('cls-all').addEventListener('click', function () {
+    state.classes = null;
+    renderClasses();
+    compute();
+  });
+  el('cls-none').addEventListener('click', function () {
+    state.classes = {};
+    renderClasses();
+    compute();
+  });
+
+  el('add-obs').addEventListener('click', function () {
+    state.obs.push(newObs());
+    renderObs();
+    compute();
+  });
+
+  el('obs-list').addEventListener('input', function (e) {
+    var t = e.target;
+    var o = findObs(t.getAttribute('data-obs'));
+    if (!o) return;
+    var k = t.getAttribute('data-k');
+    if (k === 'price') {
+      o.price = t.value;
+    } else if (k === 'cha') {
+      var v = parseInt(t.value, 10);
+      o.cha = isFinite(v) ? Math.max(3, Math.min(25, v)) : 11;
+    } else {
+      o[k] = t.checked;
+    }
+    compute();
+  });
+
+  el('obs-list').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-act]');
+    if (!b) return;
+    var o = findObs(b.getAttribute('data-obs'));
+    var act = b.getAttribute('data-act');
+    if (act === 'rm') {
+      state.obs = state.obs.filter(function (x) { return x !== o; });
+    } else if (act === 'dir' && o) {
+      o.direction = b.getAttribute('data-v');
+    }
+    renderObs();
+    compute();
+  });
+
+  /* ---------- boot ---------- */
+
+  renderObs();
+  el('results').innerHTML =
+    '<div class="card"><div class="empty">Loading object tables…</div></div>';
+
+  fetch('/data/objects.json')
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function (d) {
+      DATA = d;
+      var g = d.generated_from || {};
+      el('src-note').textContent = 'Object tables generated ' + (g.generated || '?') +
+        ' from NetHack commit ' + String(g.repo_commit || '?').slice(0, 10) + '.';
+      renderClasses();
+      compute();
+    })
+    .catch(function (err) {
+      el('results').innerHTML = '<div class="card"><div class="card-bd">' +
+        '<div class="note note-red">Could not load <code>/data/objects.json</code> (' +
+        esc(err.message) + '). The price math still works, but candidate items cannot be listed.' +
+        '</div></div></div>';
+    });
+})();
+</script>
+</body></html>

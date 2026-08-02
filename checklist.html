@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ascension Checklist — NetHack Tools</title>
+<meta name="description" content="A NetHack ascension checklist that remembers where you are: goals in order, ascension kit, prayer timeout tracker, and a running log of deaths and stupid decisions.">
+<link rel="canonical" href="https://nethack.statico.io/checklist">
+<meta property="og:title" content="Ascension Checklist — NetHack Tools">
+<meta property="og:description" content="Goals in order, ascension kit, prayer timeout tracker, and a running log of deaths and stupid decisions. Saved in your browser.">
+<meta property="og:url" content="https://nethack.statico.io/checklist"><meta property="og:type" content="website">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/smui.css">
+<style>
+  /* Checklist page ------------------------------------------------------- */
+
+  .list { list-style: none; margin: 0; padding: 0; }
+  .list > li + li { border-top: 1px solid hsl(var(--line) / 0.5); }
+
+  .item {
+    display: flex; align-items: flex-start; gap: calc(var(--step) * 2.5);
+    padding: calc(var(--step) * 2) 0; cursor: pointer;
+  }
+  .item input[type='checkbox'] { margin-top: 3px; }
+  .item .txt { flex: 1; min-width: 0; }
+  .item input:checked ~ .txt { color: hsl(var(--text-2)); }
+  .item input:checked ~ .txt strong { font-weight: 500; }
+
+  /* Progress readout in a card header */
+  .prog { display: flex; align-items: center; gap: calc(var(--step) * 2); min-width: 120px; }
+  .prog .meter { display: block; width: 70px; }
+  .prog .meter > span { transition: width 0.15s ease; }
+
+  /* Prayer panel */
+  .pray-grid {
+    display: grid; gap: calc(var(--step) * 4);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    align-items: end;
+  }
+  .verdict { display: flex; flex-direction: column; gap: calc(var(--step) * 2); }
+  .verdict-top { display: flex; align-items: center; gap: calc(var(--step) * 3); flex-wrap: wrap; }
+  .elapsed { font-size: 26px; font-weight: 600; line-height: 1; }
+  .e-red    { color: hsl(var(--red)); }
+  .e-yellow { color: hsl(var(--yellow)); }
+  .e-green  { color: hsl(var(--green)); }
+  .e-dim    { color: hsl(var(--text-2)); }
+  .bar-red    > span { background: hsl(var(--red)); }
+  .bar-yellow > span { background: hsl(var(--yellow)); }
+  .bar-green  > span { background: hsl(var(--green)); }
+  .bar-dim    > span { background: hsl(var(--text-2)); }
+  .scale { display: flex; justify-content: space-between; }
+
+  /* Deaths log */
+  .log > li { display: flex; align-items: flex-start; gap: calc(var(--step) * 2.5); padding: calc(var(--step) * 2) 0; }
+  .log .txt { flex: 1; min-width: 0; }
+  .log .tick { color: hsl(var(--text-2)); flex: 0 0 auto; }
+  .btn-x {
+    font-family: var(--mono); font-size: 13px; line-height: 1;
+    background: none; border: 1px solid transparent; color: hsl(var(--text-2));
+    padding: 0 calc(var(--step) * 1.5); cursor: pointer; flex: 0 0 auto;
+  }
+  .btn-x:hover { color: hsl(var(--red)); border-color: hsl(var(--red) / 0.6); }
+
+  /* Wish strings */
+  .wish {
+    display: block; margin: calc(var(--step) * 2) 0 calc(var(--step) * 1);
+    color: hsl(var(--frost-2)); font-size: 12px;
+    background: hsl(var(--surface-0)); border: 1px solid hsl(var(--line));
+    padding: calc(var(--step) * 1.5) calc(var(--step) * 2.5);
+    overflow-x: auto; white-space: pre;
+  }
+
+  /* Save indicator */
+  #saved { opacity: 0; transition: opacity 0.4s ease; }
+  #saved.on { opacity: 1; transition: opacity 0.08s ease; }
+
+  code { background: hsl(var(--surface-2)); padding: 0 3px; }
+</style>
+</head><body>
+<div id="nav"></div>
+
+<main class="wrap page stack">
+
+  <header class="stack">
+    <div class="spread">
+      <div>
+        <h1>Ascension Checklist</h1>
+        <p class="dim" style="margin:4px 0 0">
+          Ian's checklist. Everything on this page is saved in your browser only —
+          nothing is uploaded.
+        </p>
+      </div>
+      <span id="saved" class="badge b-green">saved</span>
+    </div>
+
+    <div id="storage-warn" class="note note-red" hidden>
+      <strong>localStorage is unavailable</strong> (private browsing, or blocked by
+      your browser). The page still works, but nothing you type or check will
+      survive a reload. Use <em>Export JSON</em> if you want to keep it.
+    </div>
+
+    <div class="row">
+      <button class="btn" id="btn-export" type="button">Export JSON</button>
+      <button class="btn" id="btn-import" type="button">Import JSON</button>
+      <input type="file" id="file-import" accept="application/json,.json" class="sr-only">
+      <span class="nav-spacer"></span>
+      <button class="btn btn-danger" id="btn-reset" type="button">Reset</button>
+    </div>
+
+    <div id="io-msg" class="note note-red" hidden></div>
+  </header>
+
+  <!-- Current game ------------------------------------------------------- -->
+  <section class="card">
+    <div class="card-hd"><span class="label">Current game</span></div>
+    <div class="card-bd">
+      <label class="field">
+        <span class="sr-only">Notes on the current game</span>
+        <textarea id="notes" rows="5" placeholder="What you're doing right now — what you've got, what you still need, what's unidentified, which shop you're saving money for…"></textarea>
+      </label>
+    </div>
+  </section>
+
+  <!-- Prayer ------------------------------------------------------------- -->
+  <section class="card">
+    <div class="card-hd">
+      <span class="label">Last turn prayed</span>
+      <span class="small dim">prayer timeout</span>
+    </div>
+    <div class="card-bd stack">
+
+      <div class="pray-grid">
+        <label class="field">
+          <span class="label">Last turn prayed</span>
+          <input type="number" id="pray-last" min="0" step="1" inputmode="numeric"
+                 placeholder="blank = never">
+        </label>
+        <label class="field">
+          <span class="label">Current turn</span>
+          <input type="number" id="pray-turn" min="0" step="1" inputmode="numeric"
+                 placeholder="T: from your status line">
+        </label>
+        <div class="field">
+          <span class="label">&nbsp;</span>
+          <button class="btn" id="btn-prayed" type="button">Prayed now</button>
+        </div>
+      </div>
+
+      <div class="verdict" aria-live="polite">
+        <div class="verdict-top">
+          <span class="elapsed e-dim" id="pray-elapsed">—</span>
+          <span class="label" id="pray-unit">turns elapsed</span>
+          <span class="badge b-dim" id="pray-badge">no data</span>
+        </div>
+        <div class="meter bar-dim" id="pray-meter"><span style="width:0%"></span></div>
+        <div class="scale small dim">
+          <span>0</span><span>500</span><span>1000+</span>
+        </div>
+        <p class="mid" style="margin:0" id="pray-msg">
+          Enter your current turn to see where you stand.
+        </p>
+      </div>
+
+      <div class="note note-warn small" id="pray-facts"></div>
+    </div>
+  </section>
+
+  <!-- Goals -------------------------------------------------------------- -->
+  <section class="card" id="sec-goals">
+    <div class="card-hd">
+      <span class="label" data-title>Goals, in order</span>
+      <span class="prog">
+        <span class="small dim" data-count>0 / 0</span>
+        <span class="meter"><span style="width:0%"></span></span>
+      </span>
+    </div>
+    <div class="card-bd">
+      <ul class="list" data-items><li><div class="empty">Loading…</div></li></ul>
+    </div>
+  </section>
+
+  <!-- Ascension kit ------------------------------------------------------ -->
+  <section class="card" id="sec-kit">
+    <div class="card-hd">
+      <span class="label" data-title>Ascension kit</span>
+      <span class="prog">
+        <span class="small dim" data-count>0 / 0</span>
+        <span class="meter"><span style="width:0%"></span></span>
+      </span>
+    </div>
+    <div class="card-bd">
+      <ul class="list" data-items><li><div class="empty">Loading…</div></li></ul>
+    </div>
+  </section>
+
+  <!-- Early single wishes ------------------------------------------------ -->
+  <section class="stack">
+    <h2 id="wish-title">Early single wishes</h2>
+    <div class="note" id="wish-note"></div>
+  </section>
+
+  <!-- Deaths ------------------------------------------------------------- -->
+  <section class="card">
+    <div class="card-hd">
+      <span class="label" id="deaths-title">Deaths &amp; stupid decisions</span>
+      <span class="small dim" id="deaths-count">0</span>
+    </div>
+    <div class="card-bd stack">
+      <form class="row" id="death-form">
+        <label class="sr-only" for="death-input">New entry</label>
+        <input type="text" id="death-input" style="flex:1;min-width:200px"
+               placeholder="What went wrong this time?" autocomplete="off">
+        <button class="btn" type="submit">Add</button>
+      </form>
+      <ul class="list log" id="deaths-list"></ul>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer wrap">
+  Checklist content is Ian's own, verbatim. Wiki links go to
+  <a href="https://nethackwiki.com/" rel="noopener" target="_blank">NetHackWiki</a>.
+  Saved locally under <code>nethack-tools:checklist:v1</code>.
+</footer>
+
+<script src="/assets/nav.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var KEY = 'nethack-tools:checklist:v1';
+  var WIKI = 'https://nethackwiki.com/wiki/';
+  var DATA_URL = '/data/checklist.json';
+
+  var data = null;   // checklist.json
+  var state = null;  // persisted user state
+
+  /* --- storage ---------------------------------------------------------- */
+
+  var storageOK = (function () {
+    try {
+      var k = '__t' + Date.now();
+      localStorage.setItem(k, '1');
+      localStorage.removeItem(k);
+      return true;
+    } catch (e) { return false; }
+  })();
+
+  if (!storageOK) document.getElementById('storage-warn').hidden = false;
+
+  var savedEl = document.getElementById('saved');
+  var savedTimer = null;
+  function flashSaved() {
+    if (!storageOK) return;
+    savedEl.classList.add('on');
+    clearTimeout(savedTimer);
+    savedTimer = setTimeout(function () { savedEl.classList.remove('on'); }, 1100);
+  }
+
+  function blankState() {
+    return { v: 1, notes: '', prayer: { last: '', turn: '' }, checks: {}, deaths: null, updated: 0 };
+  }
+
+  function loadState() {
+    var s = blankState();
+    if (!storageOK) return s;
+    var raw;
+    try { raw = localStorage.getItem(KEY); } catch (e) { return s; }
+    if (!raw) return s;
+    try {
+      var o = JSON.parse(raw);
+      return migrate(o) || s;
+    } catch (e) { return s; }
+  }
+
+  // v1 is the only schema so far. Future versions branch here rather than
+  // silently dropping the user's data.
+  function migrate(o) {
+    if (!o || typeof o !== 'object') return null;
+    if (o.v !== 1) return null;
+    var s = blankState();
+    if (typeof o.notes === 'string') s.notes = o.notes;
+    if (o.prayer && typeof o.prayer === 'object') {
+      s.prayer.last = normNum(o.prayer.last);
+      s.prayer.turn = normNum(o.prayer.turn);
+    }
+    if (o.checks && typeof o.checks === 'object') {
+      for (var k in o.checks) if (o.checks[k] === true) s.checks[k] = true;
+    }
+    if (Array.isArray(o.deaths)) {
+      s.deaths = o.deaths
+        .filter(function (d) { return d && typeof d.text === 'string'; })
+        .map(function (d) { return { id: String(d.id || nextId()), text: d.text }; });
+    }
+    s.updated = typeof o.updated === 'number' ? o.updated : 0;
+    return s;
+  }
+
+  function normNum(x) {
+    if (x === '' || x === null || x === undefined) return '';
+    var n = parseInt(x, 10);
+    return isFinite(n) && n >= 0 ? String(n) : '';
+  }
+
+  var saveTimer = null;
+  function save(immediate) {
+    clearTimeout(saveTimer);
+    if (immediate) { writeState(); return; }
+    saveTimer = setTimeout(writeState, 300);
+  }
+  function writeState() {
+    state.updated = Date.now();
+    if (!storageOK) return;
+    try { localStorage.setItem(KEY, JSON.stringify(state)); flashSaved(); }
+    catch (e) { /* quota or blocked — nothing useful to do */ }
+  }
+
+  var idc = 0;
+  function nextId() { return 'u' + Date.now().toString(36) + (idc++).toString(36); }
+
+  /* --- rendering: escaping, bold, wiki links ---------------------------- */
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function isWordChar(c) { return /[A-Za-z0-9]/.test(c); }
+
+  // First whole-word, case-sensitive occurrence of `term` that does not overlap
+  // an already-claimed range. Returns -1 if there is none.
+  function findTerm(text, term, claimed) {
+    var from = 0;
+    for (;;) {
+      var i = text.indexOf(term, from);
+      if (i < 0) return -1;
+      var e = i + term.length;
+      var before = i > 0 ? text.charAt(i - 1) : '';
+      var after = e < text.length ? text.charAt(e) : '';
+      var okB = !before || !isWordChar(before) || !isWordChar(term.charAt(0));
+      var okA = !after || !isWordChar(after) || !isWordChar(term.charAt(term.length - 1));
+      var clash = false;
+      for (var j = 0; j < claimed.length; j++) {
+        if (i < claimed[j][1] && e > claimed[j][0]) { clash = true; break; }
+      }
+      if (okB && okA && !clash) return i;
+      from = i + 1;
+    }
+  }
+
+  function push(map, pos, s) { (map[pos] || (map[pos] = [])).push(s); }
+
+  /**
+   * Render one authored string: escape it, apply **bold**, and wrap each link
+   * term in an <a class="wiki">. Substitution works on ranges over the raw
+   * text rather than on the output string, so a link can never be inserted
+   * into markup another link just produced, and no term is applied twice.
+   */
+  function render(text, links) {
+    text = String(text == null ? '' : text);
+    var opens = {}, closes = {}, skips = {}, claimed = [];
+
+    // 1. bold ranges — the ** delimiters become skipped characters
+    var re = /\*\*([\s\S]+?)\*\*/g, m;
+    while ((m = re.exec(text))) {
+      var s = m.index, e = re.lastIndex;
+      skips[s] = 2; skips[e - 2] = 2;
+      push(opens, s + 2, '<strong>');
+      push(closes, e - 2, '</strong>');
+      claimed.push([s, s + 2], [e - 2, e]);
+    }
+
+    // 2. link ranges — first free whole-word occurrence of each term
+    (links || []).forEach(function (l) {
+      if (!l || typeof l.term !== 'string' || typeof l.page !== 'string') return;
+      var i = findTerm(text, l.term, claimed);
+      if (i < 0) return;
+      var end = i + l.term.length;
+      claimed.push([i, end]);
+      push(opens, i, '<a class="wiki" href="' + esc(WIKI + encodeURI(l.page)) +
+                     '" target="_blank" rel="noopener">');
+      push(closes, end, '</a>');
+    });
+
+    // 3. emit. Closes run in reverse insertion order so nesting stays valid
+    //    (bold opens before a link inside it, so it must close after).
+    var out = '', i = 0;
+    while (i <= text.length) {
+      if (closes[i]) out += closes[i].slice().reverse().join('');
+      if (opens[i]) out += opens[i].join('');
+      if (i >= text.length) break;
+      if (skips[i]) { i += skips[i]; continue; }
+      out += esc(text.charAt(i));
+      i++;
+    }
+    return out;
+  }
+
+  /* --- checklist sections ----------------------------------------------- */
+
+  function renderSection(sec) {
+    var root = document.getElementById('sec-' + sec.id);
+    if (!root) return;
+    root.querySelector('[data-title]').textContent = sec.title;
+    var ul = root.querySelector('[data-items]');
+    ul.innerHTML = '';
+
+    sec.items.forEach(function (item) {
+      var key = sec.id + ':' + item.id;
+      var li = document.createElement('li');
+      var label = document.createElement('label');
+      label.className = 'item';
+
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = state.checks[key] === true;
+
+      var span = document.createElement('span');
+      span.className = 'txt';
+      span.innerHTML = render(item.text, item.links);
+
+      cb.addEventListener('change', function () {
+        if (cb.checked) state.checks[key] = true; else delete state.checks[key];
+        updateCounts(sec);
+        save(true);
+      });
+
+      label.appendChild(cb);
+      label.appendChild(span);
+      li.appendChild(label);
+      ul.appendChild(li);
+    });
+
+    updateCounts(sec);
+  }
+
+  function updateCounts(sec) {
+    var root = document.getElementById('sec-' + sec.id);
+    if (!root) return;
+    var total = sec.items.length, done = 0;
+    sec.items.forEach(function (it) {
+      if (state.checks[sec.id + ':' + it.id] === true) done++;
+    });
+    root.querySelector('[data-count]').textContent = done + ' / ' + total;
+    root.querySelector('.prog .meter > span').style.width =
+      (total ? (done / total) * 100 : 0) + '%';
+  }
+
+  /* --- wishes ----------------------------------------------------------- */
+
+  function renderWishes(w) {
+    if (!w) return;
+    document.getElementById('wish-title').textContent = w.title;
+    var host = document.getElementById('wish-note');
+    var html = (w.body || []).map(function (p) {
+      return '<p>' + render(p, w.bodyLinks) + '</p>';
+    }).join('');
+    html += (w.options || []).map(function (o) {
+      return '<div><code class="wish">' + esc(o.wish) + '</code>' +
+             '<span class="small">' + render(o.text, o.links) + '</span></div>';
+    }).join('');
+    host.innerHTML = html;
+  }
+
+  /* --- prayer ----------------------------------------------------------- */
+
+  var lastEl = document.getElementById('pray-last');
+  var turnEl = document.getElementById('pray-turn');
+  var elapsedEl = document.getElementById('pray-elapsed');
+  var unitEl = document.getElementById('pray-unit');
+  var badgeEl = document.getElementById('pray-badge');
+  var meterEl = document.getElementById('pray-meter');
+  var msgEl = document.getElementById('pray-msg');
+
+  function num(el) {
+    var v = el.value.trim();
+    if (v === '') return null;
+    var n = parseInt(v, 10);
+    return isFinite(n) ? n : null;
+  }
+
+  function updatePrayer() {
+    var last = num(lastEl), turn = num(turnEl);
+    var color = 'dim', badge = 'b-dim', label = 'no data';
+    var big = '—', unit = 'turns elapsed', pct = 0, msg;
+
+    if (turn === null) {
+      msg = 'Enter your current turn to see where you stand.';
+    } else if (last === null) {
+      // Never prayed this game: u.ublesscnt is still its initial 300, exactly.
+      var e0 = Math.max(0, turn);
+      big = String(e0); unit = 'turns played';
+      pct = Math.min(100, (e0 / 1000) * 100);
+      if (e0 >= 300) {
+        color = 'green'; badge = 'b-green'; label = 'safe';
+        msg = 'You have not prayed yet, so the timeout is still the starting value of ' +
+              '300 — and that one is exact, not random. Past turn 300 your first ' +
+              'prayer is safe.';
+      } else {
+        color = 'red'; badge = 'b-red'; label = 'too soon';
+        msg = 'The starting prayer timeout is exactly 300. ' + (300 - e0) +
+              ' more turns before your first prayer is safe.';
+      }
+    } else if (turn < last) {
+      color = 'dim'; badge = 'b-orange'; label = 'check numbers';
+      msg = 'Current turn is earlier than the turn you last prayed.';
+    } else {
+      var el = turn - last;
+      big = String(el); unit = 'turns elapsed';
+      pct = Math.min(100, (el / 1000) * 100);
+      if (el < 500) {
+        color = 'red'; badge = 'b-red'; label = 'risky';
+        msg = 'Well inside the likely timeout. rnz(350) lands here often, so a ' +
+              'prayer now has a good chance of angering your god.';
+      } else if (el <= 1000) {
+        color = 'yellow'; badge = 'b-yellow'; label = 'marginal';
+        msg = 'Probably expired, but not reliably. rnz(350) has a long tail — ' +
+              'a roll in the thousands is uncommon but entirely possible. ' +
+              'Worth it in real trouble; not worth it otherwise.';
+      } else {
+        color = 'green'; badge = 'b-green'; label = 'generally safe';
+        msg = 'Past the usual ~1000-turn rule of thumb. Very likely expired, ' +
+              'though rnz can still exceed this — there is no turn count that ' +
+              'guarantees it.';
+      }
+    }
+
+    elapsedEl.textContent = big;
+    elapsedEl.className = 'elapsed e-' + color;
+    unitEl.textContent = unit;
+    badgeEl.textContent = label;
+    badgeEl.className = 'badge ' + badge;
+    meterEl.className = 'meter bar-' + color;
+    meterEl.firstElementChild.style.width = pct + '%';
+    msgEl.textContent = msg;
+  }
+
+  function renderPrayerFacts(p) {
+    if (!p) return;
+    document.getElementById('pray-facts').innerHTML =
+      '<ul style="margin:0;padding-left:16px">' +
+      (p.facts || []).map(function (f) {
+        return '<li>' + render(f.text, f.links) + '</li>';
+      }).join('') + '</ul>';
+  }
+
+  /* --- deaths ----------------------------------------------------------- */
+
+  var deathsList = document.getElementById('deaths-list');
+
+  function seedDeaths() {
+    var seeds = (data.deaths && data.deaths.items) || [];
+    return seeds.map(function (d) { return { id: d.id, text: d.text }; });
+  }
+
+  function seedLinks(id) {
+    var seeds = (data.deaths && data.deaths.items) || [];
+    for (var i = 0; i < seeds.length; i++) if (seeds[i].id === id) return seeds[i].links;
+    return null;
+  }
+
+  function renderDeaths() {
+    if (data.deaths && data.deaths.title) {
+      document.getElementById('deaths-title').textContent = data.deaths.title;
+    }
+    deathsList.innerHTML = '';
+    document.getElementById('deaths-count').textContent = state.deaths.length;
+
+    if (!state.deaths.length) {
+      var li0 = document.createElement('li');
+      li0.innerHTML = '<div class="empty">Nothing yet. Give it time.</div>';
+      deathsList.appendChild(li0);
+      return;
+    }
+
+    state.deaths.forEach(function (d) {
+      var li = document.createElement('li');
+
+      var tick = document.createElement('span');
+      tick.className = 'tick';
+      tick.textContent = '>';
+
+      var txt = document.createElement('span');
+      txt.className = 'txt';
+      txt.innerHTML = render(d.text, seedLinks(d.id));
+
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'btn-x';
+      x.title = 'Remove';
+      x.setAttribute('aria-label', 'Remove entry');
+      x.textContent = '×';
+      x.addEventListener('click', function () {
+        state.deaths = state.deaths.filter(function (o) { return o !== d; });
+        renderDeaths();
+        save(true);
+      });
+
+      li.appendChild(tick);
+      li.appendChild(txt);
+      li.appendChild(x);
+      deathsList.appendChild(li);
+    });
+  }
+
+  /* --- export / import / reset ------------------------------------------ */
+
+  var ioMsg = document.getElementById('io-msg');
+  function showErr(s) { ioMsg.textContent = s; ioMsg.hidden = false; }
+  function clearErr() { ioMsg.hidden = true; ioMsg.textContent = ''; }
+
+  document.getElementById('btn-export').addEventListener('click', function () {
+    clearErr();
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var d = new Date();
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    a.href = url;
+    a.download = 'nethack-checklist-' + d.getFullYear() + '-' +
+                 pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  });
+
+  var fileEl = document.getElementById('file-import');
+  document.getElementById('btn-import').addEventListener('click', function () {
+    clearErr();
+    fileEl.click();
+  });
+
+  fileEl.addEventListener('change', function () {
+    var f = fileEl.files && fileEl.files[0];
+    fileEl.value = '';
+    if (!f) return;
+    var fr = new FileReader();
+    fr.onerror = function () { showErr('Could not read that file.'); };
+    fr.onload = function () {
+      var parsed;
+      try { parsed = JSON.parse(String(fr.result)); }
+      catch (e) { showErr('That file is not valid JSON.'); return; }
+      var next = migrate(parsed);
+      if (!next) {
+        showErr('That does not look like a checklist export (expected an object ' +
+                'with "v": 1). Nothing was changed.');
+        return;
+      }
+      state = next;
+      if (state.deaths === null) state.deaths = seedDeaths();
+      clearErr();
+      renderAll();
+      save(true);
+    };
+    fr.readAsText(f);
+  });
+
+  var resetBtn = document.getElementById('btn-reset');
+  var resetArmed = false, resetTimer = null;
+  resetBtn.addEventListener('click', function () {
+    clearErr();
+    if (!resetArmed) {
+      resetArmed = true;
+      resetBtn.textContent = 'Confirm reset?';
+      resetBtn.classList.add('on');
+      resetTimer = setTimeout(disarm, 5000);
+      return;
+    }
+    disarm();
+    state = blankState();
+    state.deaths = seedDeaths();
+    applyDefaults();
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    renderAll();
+    save(true);
+  });
+  function disarm() {
+    clearTimeout(resetTimer);
+    resetArmed = false;
+    resetBtn.textContent = 'Reset';
+    resetBtn.classList.remove('on');
+  }
+
+  /* --- wiring ----------------------------------------------------------- */
+
+  var notesEl = document.getElementById('notes');
+  notesEl.addEventListener('input', function () {
+    state.notes = notesEl.value;
+    save();
+  });
+
+  [lastEl, turnEl].forEach(function (el) {
+    el.addEventListener('input', function () {
+      state.prayer.last = lastEl.value;
+      state.prayer.turn = turnEl.value;
+      updatePrayer();
+      save();
+    });
+  });
+
+  document.getElementById('btn-prayed').addEventListener('click', function () {
+    if (turnEl.value.trim() === '') { turnEl.focus(); return; }
+    lastEl.value = turnEl.value;
+    state.prayer.last = lastEl.value;
+    updatePrayer();
+    save(true);
+  });
+
+  document.getElementById('death-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var input = document.getElementById('death-input');
+    var v = input.value.trim();
+    if (!v) return;
+    state.deaths.push({ id: nextId(), text: v });
+    input.value = '';
+    renderDeaths();
+    save(true);
+  });
+
+  // Items the source checklist already had ticked off.
+  function applyDefaults() {
+    (data.sections || []).forEach(function (sec) {
+      sec.items.forEach(function (it) {
+        if (it.done === true) state.checks[sec.id + ':' + it.id] = true;
+      });
+    });
+  }
+
+  function renderAll() {
+    notesEl.value = state.notes || '';
+    lastEl.value = state.prayer.last || '';
+    turnEl.value = state.prayer.turn || '';
+    updatePrayer();
+    (data.sections || []).forEach(renderSection);
+    renderWishes(data.wishes);
+    renderPrayerFacts(data.prayer);
+    renderDeaths();
+  }
+
+  function fail(msg) {
+    document.querySelectorAll('[data-items]').forEach(function (ul) {
+      ul.innerHTML = '<li><div class="empty">' + esc(msg) + '</div></li>';
+    });
+  }
+
+  fetch(DATA_URL, { cache: 'no-cache' })
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function (json) {
+      data = json;
+      state = loadState();
+      var fresh = state.updated === 0;
+      if (state.deaths === null) state.deaths = seedDeaths();
+      if (fresh) applyDefaults();
+      renderAll();
+    })
+    .catch(function (e) {
+      fail('Could not load checklist.json (' + e.message + ').');
+    });
+})();
+</script>
+</body></html>

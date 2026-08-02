@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sokoban Helper — NetHack Tools</title>
+<meta name="description" content="All eight NetHack Sokoban levels with colorized ASCII maps, boulder and trap counts, horizontal/vertical flip toggles for 3.7 and 5.0, per-level notes and walkthrough videos.">
+<link rel="canonical" href="https://nethack.statico.io/sokoban">
+<meta property="og:title" content="Sokoban Helper — NetHack Tools">
+<meta property="og:description" content="All eight NetHack Sokoban levels with colorized ASCII maps, flip toggles for 3.7/5.0, notes and walkthrough videos.">
+<meta property="og:url" content="https://nethack.statico.io/sokoban"><meta property="og:type" content="website">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/smui.css">
+<style>
+  /* Level grid ---------------------------------------------------------- */
+  .lvl-grid { grid-template-columns: repeat(auto-fill, minmax(252px, 1fr)); }
+
+  button.lvl {
+    font-family: var(--mono); font-size: 12px; line-height: 1.6;
+    color: hsl(var(--text-0));
+    padding: 0; text-align: left; cursor: pointer;
+    display: flex; flex-direction: column;
+  }
+  button.lvl .card-hd, button.lvl .card-bd { width: 100%; }
+  button.lvl .card-bd { display: flex; flex-direction: column; gap: calc(var(--step) * 3); flex: 1; }
+  button.lvl[aria-expanded='true'] {
+    border-color: hsl(var(--frost-2));
+    background: hsl(var(--frost-2) / 0.07);
+  }
+  button.lvl[aria-expanded='true'] .card-hd { background: hsl(var(--frost-2) / 0.12); }
+
+  /* Map blocks ---------------------------------------------------------- */
+  .tty.plain { border: 0; background: transparent; padding: 0; }
+  .preview {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 152px; overflow-x: auto;
+  }
+  .mapwrap { display: flex; justify-content: flex-start; }
+
+  /* Legend -------------------------------------------------------------- */
+  .legend { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 2) calc(var(--step) * 5); font-size: 11px; }
+  .legend span > b { font-family: var(--mono); font-size: 14px; font-weight: 700; margin-right: 4px; }
+
+  /* Detail -------------------------------------------------------------- */
+  #detail { scroll-margin-top: 58px; } /* clears the sticky nav */
+  #detail:focus { outline: none; }
+  #detail:focus-visible { outline: 2px solid hsl(var(--frost-2)); outline-offset: 2px; }
+  .detail-cols { display: grid; gap: calc(var(--step) * 5); grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 900px) {
+    .detail-cols { grid-template-columns: minmax(0, max-content) minmax(300px, 1fr); }
+  }
+
+  /* YouTube facade ------------------------------------------------------ */
+  .yt {
+    position: relative; width: 100%; aspect-ratio: 16 / 9;
+    background: hsl(var(--surface-2));
+    border: 1px solid hsl(var(--line));
+    overflow: hidden;
+  }
+  .yt-facade {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    padding: 0; margin: 0; border: 0; background: hsl(var(--surface-2));
+    cursor: pointer; display: block;
+  }
+  .yt-facade img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .yt-play {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 54px; height: 38px; display: grid; place-items: center;
+    background: hsl(var(--surface-0) / 0.86);
+    border: 1px solid hsl(var(--frost-2));
+    color: hsl(var(--frost-2)); font-size: 15px;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .yt-facade:hover .yt-play { background: hsl(var(--frost-2)); color: hsl(var(--surface-0)); }
+  .yt iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+  .strat { margin: 0; padding-left: calc(var(--step) * 5); }
+  .strat li { margin-bottom: calc(var(--step) * 2); color: hsl(var(--text-1)); }
+  .strat li:last-child { margin-bottom: 0; }
+  .strat b { color: hsl(var(--text-0)); font-weight: 600; }
+</style>
+</head><body>
+<div id="nav"></div>
+
+<main class="wrap page stack">
+
+  <header class="stack">
+    <div class="label">NetHack Tools</div>
+    <h1>Sokoban Helper</h1>
+    <p class="mid" style="max-width:78ch">
+      The eight vanilla <a class="wiki" href="https://nethackwiki.com/wiki/Sokoban" target="_blank" rel="noopener">Sokoban</a>
+      levels, in the order you meet them climbing up from the Oracle. One variant of each floor is chosen per game,
+      so you will see four of these eight. Maps, boulder and trap counts, notes and a walkthrough video for each.
+    </p>
+  </header>
+
+  <section class="card">
+    <div class="card-hd"><h2>Rules That Apply Everywhere</h2><span class="badge b-dim">Read first</span></div>
+    <div class="card-bd">
+      <ul class="strat">
+        <li><b>No diagonal squeezes.</b> Sokoban blocks moving diagonally between two boulders, and blocks squeezing
+          past a boulder into a diagonal gap. Plan every push assuming orthogonal movement only.</li>
+        <li><b>Breaking the rules costs Luck.</b> Destroying a boulder inside Sokoban (force bolt, striking, applying a
+          pick-axe) is &minus;1 Luck each time. Digging down and teleporting are disabled outright on these levels, so
+          there is no shortcut past a mistake.</li>
+        <li><b>Every floor ships spare boulders.</b> Counts are listed on each card. Spares are your error budget; the
+          two <a class="wiki" href="https://nethackwiki.com/wiki/Scroll_of_earth" target="_blank" rel="noopener">scrolls of earth</a>
+          on floor 1 are the sanctioned way to replace a boulder you have genuinely lost. Verify their beatitude first.</li>
+        <li><b>Bring a boulder-breaking backup anyway.</b> An aklys, pick-axe or wand of striking gets you past a boulder
+          that is truly stuck. Take the Luck hit rather than abandoning the branch — but treat it as the last resort.</li>
+        <li><b>Floor 1 has pits, floors 2&ndash;4 have holes.</b> A pit costs you a turn or two; a hole drops you to the
+          level below and you climb back up. Floor 4 is the top &mdash; it has no up staircase.</li>
+        <li><b>The prize is on floor 4</b>, inside a
+          <a class="wiki" href="https://nethackwiki.com/wiki/Treasure_zoo" target="_blank" rel="noopener">treasure zoo</a>
+          behind one of three doors. The
+          <a class="wiki" href="https://nethackwiki.com/wiki/Sokoban_prize" target="_blank" rel="noopener">Sokoban prize</a>
+          &mdash; a <a class="wiki" href="https://nethackwiki.com/wiki/Bag_of_holding" target="_blank" rel="noopener">bag of holding</a>
+          or an <a class="wiki" href="https://nethackwiki.com/wiki/Amulet_of_reflection" target="_blank" rel="noopener">amulet of reflection</a>
+          &mdash; sits on a burnt <a class="wiki" href="https://nethackwiki.com/wiki/Elbereth" target="_blank" rel="noopener">Elbereth</a>
+          and a cursed <a class="wiki" href="https://nethackwiki.com/wiki/Scroll_of_scare_monster" target="_blank" rel="noopener">scroll of scare monster</a>.
+          Do not pick up that scroll until you have milked the square for what you need.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-hd">
+      <h2>Orientation</h2>
+      <span class="badge b-purple">3.7 / 5.0</span>
+    </div>
+    <div class="card-bd stack">
+      <div class="row">
+        <button type="button" class="btn" id="flipH" aria-pressed="false">Flip H</button>
+        <button type="button" class="btn" id="flipV" aria-pressed="false">Flip V</button>
+        <button type="button" class="btn" id="flipReset">Reset</button>
+        <span class="dim small" id="flipState">Original orientation</span>
+      </div>
+      <div class="note note-warn">
+        NetHack 3.7 and 5.0 may mirror each Sokoban level horizontally, vertically, or both when the level is created,
+        so the map you walk into can be a reflection of the canonical one. Toggle these to match what is on your screen.
+        <b>NetHack 3.6 never flips</b> &mdash; leave both off if you are playing 3.6.
+      </div>
+      <div class="legend dim">
+        <span><b class="g-wall">- |</b> wall</span>
+        <span><b class="g-floor">.</b> floor</span>
+        <span><b class="g-boulder">0</b> boulder</span>
+        <span><b class="g-hole">^</b> pit / hole</span>
+        <span><b class="g-stair">&lt; &gt;</b> stairs</span>
+        <span><b class="g-door">+</b> door</span>
+      </div>
+      <p class="dim small" style="margin:0">
+        Rolling-boulder traps are drawn as plain floor, not <code>^</code> &mdash; they stay hidden on a premapped level.
+      </p>
+    </div>
+  </section>
+
+  <section class="stack">
+    <div class="spread">
+      <h2>Levels</h2>
+      <span class="label" id="levelCount"></span>
+    </div>
+    <div class="grid lvl-grid" id="grid">
+      <div class="empty">Loading levels&hellip;</div>
+    </div>
+  </section>
+
+  <section class="card card-glow" id="detail" role="region" tabindex="-1" hidden></section>
+
+</main>
+
+<footer class="footer wrap">
+  <div class="spread">
+    <span>Maps and notes derived from <a href="https://nethackwiki.com/" rel="noopener">NetHackWiki</a> and the NetHack source.</span>
+    <span class="dim" id="gen"></span>
+  </div>
+</footer>
+
+<script src="/assets/nav.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var WIKI = 'https://nethackwiki.com/wiki/';
+
+  var GLYPH = {
+    '-': 'g-wall', '|': 'g-wall',
+    '.': 'g-floor',
+    '0': 'g-boulder',
+    '^': 'g-hole',
+    '<': 'g-stair', '>': 'g-stair',
+    '+': 'g-door'
+  };
+
+  var state = { levels: [], h: false, v: false, open: null };
+
+  var elGrid   = document.getElementById('grid');
+  var elDetail = document.getElementById('detail');
+  var elCount  = document.getElementById('levelCount');
+  var elGen    = document.getElementById('gen');
+  var btnH     = document.getElementById('flipH');
+  var btnV     = document.getElementById('flipV');
+  var btnReset = document.getElementById('flipReset');
+  var elFlipState = document.getElementById('flipState');
+
+  /* -- helpers ---------------------------------------------------------- */
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function wikiUrl(page) { return WIKI + encodeURI(String(page).replace(/ /g, '_')); }
+
+  function wikiLink(page, text) {
+    return '<a class="wiki" href="' + esc(wikiUrl(page)) + '" target="_blank" rel="noopener">' +
+           esc(text || page) + '</a>';
+  }
+
+  function count(map, ch) {
+    var n = 0;
+    for (var i = 0; i < map.length; i++) {
+      for (var j = 0; j < map[i].length; j++) if (map[i][j] === ch) n++;
+    }
+    return n;
+  }
+
+  /* -- map transform + colorize ----------------------------------------- */
+
+  // Grid-data transform: reverse each row for H, reverse row order for V.
+  // Never a CSS transform — the text must stay selectable and readable.
+  function flipMap(rows, h, v) {
+    var out = rows.map(function (r) {
+      return h ? r.split('').reverse().join('') : r;
+    });
+    if (v) out = out.slice().reverse();
+    return out;
+  }
+
+  // Coalesce runs of identical glyph class into a single <span>.
+  function colorRow(row) {
+    var out = '', i = 0, n = row.length;
+    while (i < n) {
+      var cls = GLYPH[row.charAt(i)] || '';
+      var j = i + 1;
+      while (j < n && (GLYPH[row.charAt(j)] || '') === cls) j++;
+      var chunk = esc(row.slice(i, j));
+      out += cls ? '<span class="' + cls + '">' + chunk + '</span>' : chunk;
+      i = j;
+    }
+    return out;
+  }
+
+  function colorMap(rows) { return rows.map(colorRow).join('\n'); }
+
+  function viewMap(lvl) { return flipMap(lvl.map, state.h, state.v); }
+
+  /* -- rendering -------------------------------------------------------- */
+
+  function trapBadge(lvl) {
+    var cls = lvl.trap_type === 'pit' ? 'b-yellow' : 'b-orange';
+    return '<span class="badge ' + cls + '">' + esc(lvl.trap_type) + 's</span>';
+  }
+
+  function cardHtml(lvl) {
+    var boulders = count(lvl.map, '0');
+    var traps    = count(lvl.map, '^');
+    var spare    = boulders - traps;
+    return '' +
+      '<button type="button" class="card card-glow lvl" data-id="' + esc(lvl.id) + '"' +
+              ' aria-expanded="false" aria-controls="detail">' +
+        '<span class="card-hd">' +
+          '<span><span class="label">Floor ' + esc(lvl.floor) + '</span> ' +
+            '<b style="font-size:14px">' + esc(lvl.id) + '</b></span>' +
+          trapBadge(lvl) +
+        '</span>' +
+        '<span class="card-bd">' +
+          '<span class="preview"><span class="tty tty-sm plain">' + colorMap(viewMap(lvl)) + '</span></span>' +
+          '<span class="row small dim" style="gap:calc(var(--step)*2)">' +
+            '<span class="badge b-frost">' + boulders + ' boulders</span>' +
+            '<span class="badge b-dim">' + traps + ' ' + esc(lvl.trap_type) + 's</span>' +
+            '<span class="badge ' + (spare > 0 ? 'b-green' : 'b-red') + '">' + spare + ' spare</span>' +
+          '</span>' +
+        '</span>' +
+      '</button>';
+  }
+
+  function renderGrid() {
+    elGrid.innerHTML = state.levels.map(cardHtml).join('');
+    if (state.open) {
+      var b = elGrid.querySelector('button.lvl[data-id="' + state.open + '"]');
+      if (b) b.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  // Facade only — no <iframe> is ever emitted here. The iframe is created in
+  // startVideo(), on user activation.
+  function ytHtml(lvl) {
+    var id = lvl.youtube;
+    if (!id) return '<div class="empty">No walkthrough video for this level.</div>';
+    return '' +
+      '<div class="yt" id="yt" data-video="' + esc(id) + '">' +
+        '<button type="button" class="yt-facade" id="ytPlay">' +
+          '<img src="https://img.youtube.com/vi/' + esc(id) + '/hqdefault.jpg" alt="" loading="lazy" ' +
+               'width="480" height="360">' +
+          '<span class="yt-play" aria-hidden="true">&#9654;</span>' +
+          '<span class="sr-only">Play walkthrough video for Sokoban Level ' + esc(lvl.id) + '</span>' +
+        '</button>' +
+      '</div>' +
+      '<div class="row" style="margin-top:calc(var(--step)*2)">' +
+        '<button type="button" class="btn btn-danger" id="ytStop" hidden>Stop video</button>' +
+        '<a class="small" href="https://www.youtube.com/watch?v=' + esc(id) + '" target="_blank" rel="noopener">' +
+          'Watch on youtube.com &#8599;</a>' +
+      '</div>';
+  }
+
+  function bindVideo() {
+    var play = document.getElementById('ytPlay');
+    if (play) play.addEventListener('click', startVideo);
+    var stop = document.getElementById('ytStop');
+    if (stop) stop.addEventListener('click', stopVideo);
+  }
+
+  function orientationNote() {
+    if (!state.h && !state.v) return '';
+    var what = state.h && state.v ? 'horizontally and vertically'
+             : state.h ? 'horizontally' : 'vertically';
+    return '<div class="note">Map is mirrored <b>' + what + '</b> (3.7 / 5.0 orientation). ' +
+           'NetHack 3.6 always uses the original orientation.</div>';
+  }
+
+  function floorFourNote(lvl) {
+    if (lvl.floor !== 4) return '';
+    var favored = lvl.variant === 'a' ? 'a bag of holding' : 'an amulet of reflection';
+    return '<div class="note note-warn"><b>Prize odds.</b> In NetHack 3.6 the prize is an even split between a ' +
+           'bag of holding and an amulet of reflection. In 3.7 and 5.0 the roll is weighted: on ' + esc(lvl.id) +
+           ' it is 75% ' + favored + '. Floor 4 is the top of the branch and has <b>no up staircase</b> &mdash; ' +
+           'that is not a missing glyph.</div>';
+  }
+
+  function renderDetail(lvl) {
+    var boulders = count(lvl.map, '0');
+    var traps    = count(lvl.map, '^');
+    var spare    = boulders - traps;
+
+    elDetail.innerHTML = '' +
+      '<div class="card-hd">' +
+        '<h2 id="detailTitle">Sokoban Level ' + esc(lvl.id) + '</h2>' +
+        '<span class="row" style="gap:calc(var(--step)*2)">' +
+          '<span class="badge b-purple">Floor ' + esc(lvl.floor) + '</span>' +
+          trapBadge(lvl) +
+          '<button type="button" class="btn" id="detailClose">Close</button>' +
+        '</span>' +
+      '</div>' +
+      '<div class="card-bd">' +
+        '<div class="detail-cols">' +
+          '<div class="stack">' +
+            '<div class="mapwrap"><div class="tty">' + colorMap(viewMap(lvl)) + '</div></div>' +
+            orientationNote() +
+          '</div>' +
+          '<div class="stack">' +
+            '<div class="row">' +
+              '<span class="badge b-frost">' + boulders + ' boulders</span>' +
+              '<span class="badge b-dim">' + traps + ' ' + esc(lvl.trap_type) + 's</span>' +
+              '<span class="badge ' + (spare > 0 ? 'b-green' : 'b-red') + '">' + spare + ' spare</span>' +
+              '<span class="badge b-dim">' + esc(lvl.source_file) + '</span>' +
+            '</div>' +
+            '<p class="mid" style="margin:0">' + esc(lvl.notes) + '</p>' +
+            floorFourNote(lvl) +
+            '<div>' +
+              '<div class="label" style="margin-bottom:calc(var(--step)*2)">Walkthrough</div>' +
+              '<div id="ytZone">' + ytHtml(lvl) + '</div>' +
+            '</div>' +
+            '<div>' + wikiLink(lvl.wiki_page, lvl.wiki_page + ' on NetHackWiki ↗') + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    elDetail.setAttribute('aria-labelledby', 'detailTitle');
+    elDetail.hidden = false;
+
+    var close = document.getElementById('detailClose');
+    if (close) close.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeDetail(true);
+    });
+
+    bindVideo();
+  }
+
+  /* -- video ------------------------------------------------------------ */
+
+  function currentLevel() {
+    return state.levels.filter(function (l) { return l.id === state.open; })[0];
+  }
+
+  function startVideo() {
+    var box = document.getElementById('yt');
+    if (!box || box.querySelector('iframe')) return;
+    var id = box.getAttribute('data-video');
+    var lvl = currentLevel();
+    var frame = document.createElement('iframe');
+    frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0';
+    frame.title = 'Sokoban Level ' + (lvl ? lvl.id : '') + ' walkthrough';
+    frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    frame.setAttribute('allowfullscreen', '');
+    frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    box.innerHTML = '';
+    box.appendChild(frame);
+    var stop = document.getElementById('ytStop');
+    if (stop) { stop.hidden = false; stop.focus(); }
+  }
+
+  function stopVideo() {
+    var zone = document.getElementById('ytZone');
+    var lvl = currentLevel();
+    if (!zone || !lvl) return;
+    zone.innerHTML = ytHtml(lvl);   // drops the iframe entirely
+    bindVideo();
+    var play = document.getElementById('ytPlay');
+    if (play) play.focus();
+  }
+
+  /* -- open / close ----------------------------------------------------- */
+
+  function openDetail(id, scroll) {
+    var lvl = state.levels.filter(function (l) { return l.id === id; })[0];
+    if (!lvl) return;
+    state.open = id;
+    Array.prototype.forEach.call(elGrid.querySelectorAll('button.lvl'), function (b) {
+      b.setAttribute('aria-expanded', String(b.getAttribute('data-id') === id));
+    });
+    renderDetail(lvl);
+    if (history.replaceState) history.replaceState(null, '', '#' + id);
+    if (scroll !== false) {
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      elDetail.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      elDetail.focus({ preventScroll: true });
+    }
+  }
+
+  function closeDetail(refocus) {
+    var prev = state.open;
+    state.open = null;
+    elDetail.hidden = true;
+    elDetail.innerHTML = '';
+    Array.prototype.forEach.call(elGrid.querySelectorAll('button.lvl'), function (b) {
+      b.setAttribute('aria-expanded', 'false');
+    });
+    if (history.replaceState) history.replaceState(null, '', location.pathname + location.search);
+    if (refocus && prev) {
+      var b = elGrid.querySelector('button.lvl[data-id="' + prev + '"]');
+      if (b) b.focus();
+    }
+  }
+
+  /* -- flips ------------------------------------------------------------ */
+
+  function applyFlips() {
+    btnH.setAttribute('aria-pressed', String(state.h));
+    btnV.setAttribute('aria-pressed', String(state.v));
+    elFlipState.textContent = !state.h && !state.v ? 'Original orientation'
+      : 'Mirrored ' + [state.h ? 'horizontally' : null, state.v ? 'vertically' : null]
+          .filter(Boolean).join(' + ');
+    renderGrid();
+    if (state.open) {
+      var lvl = state.levels.filter(function (l) { return l.id === state.open; })[0];
+      if (lvl) renderDetail(lvl);
+    }
+  }
+
+  btnH.addEventListener('click', function () { state.h = !state.h; applyFlips(); });
+  btnV.addEventListener('click', function () { state.v = !state.v; applyFlips(); });
+  btnReset.addEventListener('click', function () { state.h = false; state.v = false; applyFlips(); });
+
+  elGrid.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('button.lvl') : null;
+    if (!btn) return;
+    var id = btn.getAttribute('data-id');
+    if (state.open === id) closeDetail(true); else openDetail(id);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && state.open) closeDetail(true);
+  });
+
+  /* -- boot ------------------------------------------------------------- */
+
+  fetch('/data/sokoban.json')
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      state.levels = (data && data.levels) || [];
+      elCount.textContent = state.levels.length + ' levels · 4 per game';
+      if (data && data.generated_from && data.generated_from.generated) {
+        elGen.textContent = 'Data generated ' + data.generated_from.generated;
+      }
+      if (!state.levels.length) {
+        elGrid.innerHTML = '<div class="empty">No level data found.</div>';
+        return;
+      }
+      renderGrid();
+      var hash = (location.hash || '').replace(/^#/, '');
+      if (hash) openDetail(hash, false);
+    })
+    .catch(function (err) {
+      elGrid.innerHTML = '<div class="empty">Could not load <code>/data/sokoban.json</code> &mdash; ' +
+                         esc(err.message) + '</div>';
+    });
+
+  // Exposed for verification only.
+  window.__soko = { flipMap: flipMap, colorMap: colorMap, state: state };
+})();
+</script>
+</body></html>
