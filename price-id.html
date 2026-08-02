@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Price ID Calculator — NetHack Tools</title>
+<title>Price ID Calculator — statico's NetHack Tools</title>
 <meta name="description" content="Reverse NetHack shop prices back to base costs and candidate items. Exact integer replication of get_cost() and set_cost(), for NetHack 3.6, 3.7 and 5.0. Intersect multiple observations to narrow the answer.">
 <link rel="canonical" href="https://nethack.statico.io/price-id">
-<meta property="og:title" content="Price ID Calculator — NetHack Tools">
+<meta property="og:title" content="Price ID Calculator — statico&#39;s NetHack Tools">
 <meta property="og:description" content="Reverse NetHack shop prices back to base costs and candidate items, for 3.6, 3.7 and 5.0. Intersect multiple observations to narrow the answer.">
 <meta property="og:url" content="https://nethack.statico.io/price-id"><meta property="og:type" content="website">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -154,10 +154,43 @@
 
 </main>
 
-<footer class="footer wrap">
-  <div class="spread">
-    <span>Object tables generated from the NetHack source. Pricing ported from <code>src/shk.c</code>.</span>
-    <span><a href="https://nethackwiki.com/wiki/Price_identification" class="wiki" target="_blank" rel="noopener">Price identification on NetHackWiki</a></span>
+<footer class="footer wrap credits">
+  <dl>
+    <dt>Pricing math</dt>
+    <dd>
+      Ported from <code>get_cost()</code> and <code>set_cost()</code> in <code>src/shk.c</code>
+      of the <a href="https://github.com/NetHack/NetHack" rel="noopener">NetHack source</a>
+      by the DevTeam, under the
+      <a href="https://www.nethack.org/common/license.html" rel="noopener">NetHack General Public License</a>.
+    </dd>
+
+    <dt>Object tables</dt>
+    <dd>
+      Base costs and generation probabilities generated from <code>include/objects.h</code>
+      (3.7 / 5.0) and <code>src/objects.c</code> (3.6), same source and license.
+    </dd>
+
+    <dt>Reference</dt>
+    <dd>
+      <a href="https://nethackwiki.com/wiki/Price_identification" class="wiki" target="_blank" rel="noopener">Price identification</a>
+      on <a href="https://nethackwiki.com/" rel="noopener">NetHackWiki</a>, licensed
+      <a href="https://creativecommons.org/licenses/by-sa/3.0/" rel="noopener">CC BY-SA 3.0</a> —
+      used to cross-check this implementation, which is derived from the source rather than from the wiki's tables.
+    </dd>
+
+    <dt>Design</dt>
+    <dd>
+      Styled after <a href="https://smui.statico.io/" rel="noopener">SMUI</a>, using the
+      <a href="https://www.nordtheme.com/" rel="noopener">Nord</a> palette by Arctic Ice Studio
+      and <a href="https://www.jetbrains.com/lp/mono/" rel="noopener">JetBrains Mono</a>.
+    </dd>
+  </dl>
+
+  <div class="meta-bar">
+    <span>Built by statico &middot; <code>@statico</code> on Discord &middot; not affiliated with the NetHack DevTeam.</span>
+    <span class="links">
+      <a href="https://github.com/statico/nethack-tools" rel="noopener">Source on GitHub</a>
+    </span>
   </div>
 </footer>
 

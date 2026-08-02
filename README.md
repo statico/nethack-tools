@@ -1,7 +1,11 @@
-# NetHack Tools
+# statico's NetHack Tools
 
-Player tools for [NetHack](https://www.nethack.org/) 3.6, 3.7 and 5.0, hosted at
-**[nethack.statico.io](https://nethack.statico.io)**.
+Player tools for [NetHack](https://www.nethack.org/) 3.6, 3.7 and 5.0.
+
+- **Site:** [nethack.statico.io](https://nethack.statico.io)
+- **Source:** [github.com/statico/nethack-tools](https://github.com/statico/nethack-tools)
+- **Contact:** `@statico` on Discord — bug reports and corrections welcome, especially if
+  you can point at the line of C that proves me wrong.
 
 > [!NOTE]
 > This was mostly vibe coded with [Claude Code](https://claude.com/claude-code) and Opus,
@@ -115,11 +119,64 @@ Styled after [SMUI](https://smui.statico.io/) — Nord palette, JetBrains Mono, 
 corners. The whole system is `assets/smui.css`; pages use its classes and its CSS custom
 properties, and don't define colors of their own.
 
-## License
+## Credits
 
-MIT for the code here. NetHack itself is licensed under the
-[NetHack General Public License](https://www.nethack.org/common/license.html); game data in
-`data/` is derived from the NetHack source and from NetHackWiki, which is
-[CC BY-SA](https://creativecommons.org/licenses/by-sa/3.0/).
+Almost nothing here is original. The work was reading other people's work carefully and
+wiring it together.
 
+### NetHack itself
+
+The [NetHack DevTeam](https://www.nethack.org/common/devteam.html) and everyone who
+contributed to it since 1987. All game data on this site — every base cost, generation
+probability, Sokoban map, and the entire pricing algorithm — comes from the
+[NetHack source](https://github.com/NetHack/NetHack), specifically:
+
+| What | Where |
+|---|---|
+| Pricing algorithm | `src/shk.c` — `get_cost()`, `set_cost()`, `getprice()`, `oid_price_adjustment()` |
+| Object tables (3.7 / 5.0) | `include/objects.h` |
+| Object tables (3.6) | `src/objects.c` |
+| Sokoban maps | `dat/soko1-1.lua` … `dat/soko4-2.lua` |
+| Prayer timeout | `src/pray.c`, `src/u_init.c` |
+
+NetHack is licensed under the
+[NetHack General Public License](https://www.nethack.org/common/license.html).
+
+### NetHackWiki
+
+[NetHackWiki](https://nethackwiki.com/) and its contributors, licensed
+[CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Used for:
+
+- Sokoban level notes and per-level strategy, condensed from the
+  [Sokoban](https://nethackwiki.com/wiki/Sokoban) page and the eight level pages
+- The video links on each level page
+- Every reference link on the checklist — 199 targets, validated against the wiki database dump
+- Cross-checking the price calculator against
+  [Price identification](https://nethackwiki.com/wiki/Price_identification)
+
+Note that this site's numbers are derived from the C source, not transcribed from the wiki's
+tables. The wiki was the check, not the input.
+
+### Sokoban walkthrough videos
+
+All eight are from the **Concise Nethack** series by
+**[Larry Fluckiger](https://www.youtube.com/@larryfluckiger9189)**, linked from the
+NetHackWiki level pages. They are embedded here with credit and all rights remain with the
+author. Nothing is loaded from YouTube until you press play.
+
+If you're the author and would rather not be embedded, open an issue or find me on Discord
+and I'll switch to plain links.
+
+### Design and typography
+
+- [SMUI](https://smui.statico.io/) — the design system this is styled after
+- [Nord](https://www.nordtheme.com/) by Arctic Ice Studio — color palette, MIT
+- [JetBrains Mono](https://www.jetbrains.com/lp/mono/) by JetBrains — typeface, SIL Open Font License
+
+### This repo
+
+MIT for the code written here (`assets/`, `scripts/`, the HTML). Data in `data/` is derived
+from the sources above and carries their licenses.
+
+Built by [statico](https://github.com/statico), mostly by pointing Claude at the source.
 Not affiliated with the NetHack DevTeam.

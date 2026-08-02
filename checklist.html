@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ascension Checklist — NetHack Tools</title>
+<title>Ascension Checklist — statico's NetHack Tools</title>
 <meta name="description" content="A NetHack ascension checklist that remembers where you are: goals in order, ascension kit, prayer timeout tracker, and a running log of deaths and stupid decisions.">
 <link rel="canonical" href="https://nethack.statico.io/checklist">
-<meta property="og:title" content="Ascension Checklist — NetHack Tools">
+<meta property="og:title" content="Ascension Checklist — statico&#39;s NetHack Tools">
 <meta property="og:description" content="Goals in order, ascension kit, prayer timeout tracker, and a running log of deaths and stupid decisions. Saved in your browser.">
 <meta property="og:url" content="https://nethack.statico.io/checklist"><meta property="og:type" content="website">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -216,10 +216,50 @@
 
 </main>
 
-<footer class="footer wrap">
-  Checklist content is Ian's own, verbatim. Wiki links go to
-  <a href="https://nethackwiki.com/" rel="noopener" target="_blank">NetHackWiki</a>.
-  Saved locally under <code>nethack-tools:checklist:v1</code>.
+<footer class="footer wrap credits">
+  <dl>
+    <dt>Checklist content</dt>
+    <dd>
+      statico's own list, reproduced verbatim — including its ordering and its typos.
+    </dd>
+
+    <dt>Reference links</dt>
+    <dd>
+      Every linked item and mechanic points at
+      <a href="https://nethackwiki.com/" rel="noopener">NetHackWiki</a>,
+      written by its contributors and licensed
+      <a href="https://creativecommons.org/licenses/by-sa/3.0/" rel="noopener">CC BY-SA 3.0</a>.
+      All 199 targets are validated against the wiki database dump at build time.
+    </dd>
+
+    <dt>Prayer mechanics</dt>
+    <dd>
+      Timeout behaviour read from <code>src/pray.c</code> and <code>src/u_init.c</code> in the
+      <a href="https://github.com/NetHack/NetHack" rel="noopener">NetHack source</a>
+      by the DevTeam, under the
+      <a href="https://www.nethack.org/common/license.html" rel="noopener">NetHack General Public License</a>.
+    </dd>
+
+    <dt>Your data</dt>
+    <dd>
+      Saved only in this browser under <code>nethack-tools:checklist:v1</code>.
+      Nothing is uploaded, and there is no analytics on this site.
+    </dd>
+
+    <dt>Design</dt>
+    <dd>
+      Styled after <a href="https://smui.statico.io/" rel="noopener">SMUI</a>, using the
+      <a href="https://www.nordtheme.com/" rel="noopener">Nord</a> palette by Arctic Ice Studio
+      and <a href="https://www.jetbrains.com/lp/mono/" rel="noopener">JetBrains Mono</a>.
+    </dd>
+  </dl>
+
+  <div class="meta-bar">
+    <span>Built by statico &middot; <code>@statico</code> on Discord &middot; not affiliated with the NetHack DevTeam.</span>
+    <span class="links">
+      <a href="https://github.com/statico/nethack-tools" rel="noopener">Source on GitHub</a>
+    </span>
+  </div>
 </footer>
 
 <script src="/assets/nav.js"></script>

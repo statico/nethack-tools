@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sokoban Helper — NetHack Tools</title>
+<title>Sokoban Helper — statico's NetHack Tools</title>
 <meta name="description" content="All eight NetHack Sokoban levels with colorized ASCII maps, boulder and trap counts, horizontal/vertical flip toggles for 3.7 and 5.0, per-level notes and walkthrough videos.">
 <link rel="canonical" href="https://nethack.statico.io/sokoban">
-<meta property="og:title" content="Sokoban Helper — NetHack Tools">
+<meta property="og:title" content="Sokoban Helper — statico&#39;s NetHack Tools">
 <meta property="og:description" content="All eight NetHack Sokoban levels with colorized ASCII maps, flip toggles for 3.7/5.0, notes and walkthrough videos.">
 <meta property="og:url" content="https://nethack.statico.io/sokoban"><meta property="og:type" content="website">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -83,7 +83,7 @@
 <main class="wrap page stack">
 
   <header class="stack">
-    <div class="label">NetHack Tools</div>
+    <div class="label">statico&#39;s NetHack Tools</div>
     <h1>Sokoban Helper</h1>
     <p class="mid" style="max-width:78ch">
       The eight vanilla <a class="wiki" href="https://nethackwiki.com/wiki/Sokoban" target="_blank" rel="noopener">Sokoban</a>
@@ -166,10 +166,46 @@
 
 </main>
 
-<footer class="footer wrap">
-  <div class="spread">
-    <span>Maps and notes derived from <a href="https://nethackwiki.com/" rel="noopener">NetHackWiki</a> and the NetHack source.</span>
-    <span class="dim" id="gen"></span>
+<footer class="footer wrap credits">
+  <dl>
+    <dt>Walkthrough videos</dt>
+    <dd>
+      All eight are from the <em>Concise Nethack</em> series by
+      <a href="https://www.youtube.com/@larryfluckiger9189" rel="noopener">Larry Fluckiger</a>,
+      linked from the NetHackWiki level pages. Embedded here with credit; all rights remain
+      with the author. Nothing loads from YouTube until you press play.
+    </dd>
+
+    <dt>Level maps</dt>
+    <dd>
+      Rendered from <code>dat/soko1-1.lua</code> &hellip; <code>soko4-2.lua</code> in the
+      <a href="https://github.com/NetHack/NetHack" rel="noopener">NetHack source</a>
+      by the DevTeam, under the
+      <a href="https://www.nethack.org/common/license.html" rel="noopener">NetHack General Public License</a>.
+    </dd>
+
+    <dt>Level notes</dt>
+    <dd>
+      Condensed from the
+      <a href="https://nethackwiki.com/wiki/Sokoban" class="wiki" target="_blank" rel="noopener">Sokoban</a>
+      and per-level pages on <a href="https://nethackwiki.com/" rel="noopener">NetHackWiki</a>,
+      written by its contributors and licensed
+      <a href="https://creativecommons.org/licenses/by-sa/3.0/" rel="noopener">CC BY-SA 3.0</a>.
+    </dd>
+
+    <dt>Design</dt>
+    <dd>
+      Styled after <a href="https://smui.statico.io/" rel="noopener">SMUI</a>, using the
+      <a href="https://www.nordtheme.com/" rel="noopener">Nord</a> palette by Arctic Ice Studio
+      and <a href="https://www.jetbrains.com/lp/mono/" rel="noopener">JetBrains Mono</a>.
+    </dd>
+  </dl>
+
+  <div class="meta-bar">
+    <span>Built by statico &middot; <code>@statico</code> on Discord &middot; <span class="dim" id="gen"></span></span>
+    <span class="links">
+      <a href="https://github.com/statico/nethack-tools" rel="noopener">Source on GitHub</a>
+    </span>
   </div>
 </footer>
 
@@ -309,7 +345,13 @@
         '<button type="button" class="btn btn-danger" id="ytStop" hidden>Stop video</button>' +
         '<a class="small" href="https://www.youtube.com/watch?v=' + esc(id) + '" target="_blank" rel="noopener">' +
           'Watch on youtube.com &#8599;</a>' +
-      '</div>';
+      '</div>' +
+      '<p class="small dim" style="margin-top:calc(var(--step)*2)">' +
+        (lvl.video_title ? '&ldquo;' + esc(lvl.video_title) + '&rdquo; by ' : 'Video by ') +
+        '<a href="' + esc(lvl.video_author_url || 'https://www.youtube.com/@larryfluckiger9189') + '" ' +
+           'target="_blank" rel="noopener">' + esc(lvl.video_author || 'Larry Fluckiger') + '</a>. ' +
+        'Linked from the NetHackWiki level page; all rights remain with the author.' +
+      '</p>';
   }
 
   function bindVideo() {

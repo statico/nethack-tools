@@ -23,7 +23,7 @@
     el.outerHTML =
       '<nav class="nav"><div class="nav-inner">' +
         '<a class="nav-brand" href="/"' + (atHome ? ' aria-current="page"' : '') + '>' +
-          '<span class="tick">&gt;</span> nethack.statico.io' +
+          "<span class=\"tick\">&gt;</span> statico's nethack tools" +
         '</a>' +
         '<div class="nav-links">' + links + '</div>' +
         '<div class="nav-spacer"></div>' +

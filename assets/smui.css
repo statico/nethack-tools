@@ -364,9 +364,35 @@ details > summary:hover { color: hsl(var(--text-0)); }
 .footer {
   border-top: 1px solid hsl(var(--line));
   margin-top: calc(var(--step) * 16);
-  padding: calc(var(--step) * 6) 0;
+  padding: calc(var(--step) * 6) 0 calc(var(--step) * 10);
   color: hsl(var(--text-2)); font-size: 11px;
 }
+.footer a { color: hsl(var(--text-1)); }
+.footer a:hover { color: hsl(var(--frost-2)); }
+
+/* Credits block — every tool page names its own sources */
+.credits { display: grid; gap: calc(var(--step) * 3); }
+.credits dl {
+  margin: 0; display: grid; gap: calc(var(--step) * 2);
+  grid-template-columns: max-content 1fr;
+}
+.credits dt {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: hsl(var(--text-2)); white-space: nowrap;
+  padding-top: 1px;
+}
+.credits dd { margin: 0; color: hsl(var(--text-1)); font-size: 11px; line-height: 1.65; }
+@media (max-width: 560px) {
+  .credits dl { grid-template-columns: 1fr; gap: calc(var(--step) * 1); }
+  .credits dd { margin-bottom: calc(var(--step) * 2); }
+}
+.meta-bar {
+  display: flex; flex-wrap: wrap; gap: calc(var(--step) * 2) calc(var(--step) * 4);
+  align-items: center; justify-content: space-between;
+  padding-top: calc(var(--step) * 4); margin-top: calc(var(--step) * 4);
+  border-top: 1px solid hsl(var(--line));
+}
+.meta-bar .links { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 4); }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
