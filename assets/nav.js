@@ -3,10 +3,10 @@
 (function () {
   var TOOLS = [
     { href: '/price-id', label: 'Price ID' },
+    { href: '/sokoban', label: 'Sokoban' },
     { href: '/wish', label: 'Wish' },
     { href: '/monsters', label: 'Monsters' },
     { href: '/dungeon', label: 'Dungeon' },
-    { href: '/sokoban', label: 'Sokoban' },
     { href: '/checklist', label: 'Checklist' },
   ];
 

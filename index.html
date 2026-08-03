@@ -28,6 +28,11 @@
   }
   .tool:hover .go { color: hsl(var(--frost-2)); }
   .ver { display: flex; gap: calc(var(--step) * 2); flex-wrap: wrap; }
+  /* Six tools, so pin the grid to two rows of three rather than letting
+     auto-fit pack four onto the first row. Steps down to two, then one. */
+  .grid.tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 800px) { .grid.tools { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 540px) { .grid.tools { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
 <body>
@@ -49,7 +54,7 @@
     </div>
   </header>
 
-  <div class="grid grid-3">
+  <div class="grid tools">
 
     <a class="card card-glow tool" href="/price-id">
       <div class="card-hd">
@@ -68,6 +73,24 @@
           often they actually generate.
         </p>
         <span class="go">Open calculator &rarr;</span>
+      </div>
+    </a>
+
+    <a class="card card-glow tool" href="/sokoban">
+      <div class="card-hd">
+        <h2>Sokoban</h2>
+        <span class="badge b-dim">Reference</span>
+      </div>
+      <div class="card-bd">
+        <p>
+          All eight levels, with maps rendered from the game's own level files. Click a
+          level for the full map and its solution video.
+        </p>
+        <p>
+          Horizontal and vertical flip toggles, so the map matches what you see in 3.7
+          and 5.0 — which mirror Sokoban levels at generation.
+        </p>
+        <span class="go">Open levels &rarr;</span>
       </div>
     </a>
 
@@ -124,24 +147,6 @@
           Click any dungeon, branch or special level for its ranges, entry rules and flags.
         </p>
         <span class="go">Open map &rarr;</span>
-      </div>
-    </a>
-
-    <a class="card card-glow tool" href="/sokoban">
-      <div class="card-hd">
-        <h2>Sokoban</h2>
-        <span class="badge b-dim">Reference</span>
-      </div>
-      <div class="card-bd">
-        <p>
-          All eight levels, with maps rendered from the game's own level files. Click a
-          level for the full map and its solution video.
-        </p>
-        <p>
-          Horizontal and vertical flip toggles, so the map matches what you see in 3.7
-          and 5.0 — which mirror Sokoban levels at generation.
-        </p>
-        <span class="go">Open levels &rarr;</span>
       </div>
     </a>
 

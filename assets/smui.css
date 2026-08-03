@@ -178,6 +178,22 @@ code, kbd, pre { font-family: var(--mono); }
 }
 .nav-spacer { margin-left: auto; }
 
+/* Narrow screens: the nav wraps to several lines, and the spacer's auto margin
+   would strand the trailing link alone on the last one. Let everything flow. */
+/* 840px is where six tool links plus the brand stop fitting on one row. */
+@media (max-width: 840px) {
+  /* A wrapped nav is too tall to keep pinned — it would eat a sixth of a phone
+     screen for the whole scroll. Let it scroll away instead. */
+  .nav { position: static; }
+  .nav-inner { gap: calc(var(--step) * 4); padding-block: calc(var(--step) * 1.5); }
+  .nav-spacer { display: none; }
+  /* display:contents dissolves the two link groups so every anchor becomes a
+     direct flex child and they all wrap as one run, instead of each group
+     claiming its own line. */
+  .nav-links { display: contents; }
+  .nav-links a { padding-block: calc(var(--step) * 1.5); }
+}
+
 /* Card -------------------------------------------------------------------- */
 
 .card {
