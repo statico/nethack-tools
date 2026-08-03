@@ -190,6 +190,14 @@ Styled after [SMUI](https://smui.statico.io/) — Nord palette, JetBrains Mono, 
 corners. The whole system is `assets/smui.css`; pages use its classes and its CSS custom
 properties, and don't define colors of their own.
 
+Light and dark are both first-class. The switcher in the nav cycles **system → light →
+dark**; system follows your OS live, and an explicit choice persists in `localStorage`.
+`assets/theme.js` is loaded synchronously from `<head>` so a stored choice is applied
+before first paint rather than flashing the wrong theme. `color-scheme` is set per theme,
+so native selects, number spinners and scrollbars follow too.
+
+Nothing renders below **12px**, including the JS-scaled Sokoban maps.
+
 ## Credits
 
 Almost nothing here is original. The work was reading other people's work carefully and

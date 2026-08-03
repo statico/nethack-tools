@@ -32,8 +32,34 @@
         '<div class="nav-spacer"></div>' +
         '<div class="nav-links">' +
           '<a href="https://github.com/statico/nethack-tools" rel="noopener">Source</a>' +
+          '<button type="button" class="theme-btn" id="theme-btn"></button>' +
         '</div>' +
       '</div></nav>';
+
+    mountTheme();
+  }
+
+  /* Theme switcher. Cycles system -> light -> dark and shows where it is now;
+     the label says what you are looking at, not what the click will do. */
+  var GLYPH = { system: '◐', light: '○', dark: '●' };
+
+  function mountTheme() {
+    var btn = document.getElementById('theme-btn');
+    if (!btn || !window.NHTheme) return;
+
+    function label() {
+      var m = NHTheme.get();
+      btn.innerHTML = '<span class="theme-glyph" aria-hidden="true">' + GLYPH[m] + '</span>' +
+        '<span class="theme-word">' + m + '</span>';
+      btn.setAttribute('aria-label',
+        'Theme: ' + m + (m === 'system' ? ' (following your device)' : '') +
+        '. Switch to ' + NHTheme.next() + '.');
+      btn.title = btn.getAttribute('aria-label');
+    }
+
+    btn.addEventListener('click', function () { NHTheme.cycle(); });
+    NHTheme.onChange(label);
+    label();
   }
 
   if (document.readyState === 'loading') {

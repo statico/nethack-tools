@@ -9,6 +9,7 @@
 <meta property="og:url" content="https://nethack.statico.io/sokoban"><meta property="og:type" content="website">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/smui.css">
+<script src="/assets/theme.js"></script>
 <style>
   /* Level grid ---------------------------------------------------------- */
   .lvl-grid { grid-template-columns: repeat(auto-fill, minmax(252px, 1fr)); }
@@ -31,16 +32,18 @@
   .tty.plain { border: 0; background: transparent; padding: 0; }
   /* Maps are 14-29 columns wide depending on level, so a fixed font size makes
      the small ones tiny. fitMaps() scales each one to fill its container. */
+  /* No overflow clipping: 12px is the floor for map glyphs now, so a tall
+     level grows the card rather than losing its bottom rows. */
   .preview {
     display: flex; align-items: center; justify-content: center;
-    min-height: 190px; overflow: hidden;
+    min-height: 190px;
   }
-  .preview .tty { font-size: 11px; }
+  .preview .tty { font-size: 12px; }
   .mapwrap { display: flex; justify-content: center; }
   .mapwrap .tty { font-size: 20px; line-height: 1.05; padding: calc(var(--step) * 4); }
 
   /* Legend -------------------------------------------------------------- */
-  .legend { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 2) calc(var(--step) * 5); font-size: 11px; }
+  .legend { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 2) calc(var(--step) * 5); font-size: 12px; }
   .legend span > b { font-family: var(--mono); font-size: 14px; font-weight: 700; margin-right: 4px; }
 
   /* Detail -------------------------------------------------------------- */
@@ -512,7 +515,7 @@
       var box = m.parentNode;
       var inPreview = box.classList.contains('preview');
       var maxPx = inPreview ? 15 : 30;   // don't blow small maps up absurdly
-      var minPx = inPreview ? 7 : 11;
+      var minPx = 12;                    // site-wide floor; never go below it
 
       m.style.fontSize = '';             // reset so we measure the CSS default
       var base = parseFloat(getComputedStyle(m).fontSize) || 13;

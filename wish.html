@@ -9,6 +9,7 @@
 <meta property="og:url" content="https://nethack.statico.io/wish"><meta property="og:type" content="website">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/smui.css">
+<script src="/assets/theme.js"></script>
 <style>
   /* Page-local only. Colors come from smui.css custom properties. */
   .wishline {
@@ -29,9 +30,9 @@
   @media (max-width: 620px) { .f-row { grid-template-columns: 1fr; gap: calc(var(--step) * 1); } }
   .f-list > * + * { margin-top: calc(var(--step) * 3.5); padding-top: calc(var(--step) * 3.5); border-top: 1px solid hsl(var(--line) / 0.5); }
   .f-body { font-size: 12px; color: hsl(var(--text-1)); }
-  .f-cite { font-size: 10px; color: hsl(var(--text-2)); letter-spacing: 0.5px; margin-top: calc(var(--step) * 1.5); }
+  .f-cite { font-size: 12px; color: hsl(var(--text-2)); letter-spacing: 0.5px; margin-top: calc(var(--step) * 1.5); }
   .f-meter { display: flex; align-items: center; gap: calc(var(--step) * 2); margin-top: calc(var(--step) * 2); max-width: 320px; }
-  .f-meter .pct { font-size: 11px; color: hsl(var(--text-1)); min-width: 46px; text-align: right; }
+  .f-meter .pct { font-size: 12px; color: hsl(var(--text-1)); min-width: 46px; text-align: right; }
   .sel-wide { max-width: 100%; }
   .fields { display: grid; gap: calc(var(--step) * 4); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
   /* .field is a column flex, so a bare .seg child would stretch to fill it;
@@ -40,7 +41,7 @@
   .field-wide { grid-column: 1 / -1; }
   .seg-scroll { overflow-x: auto; max-width: 100%; align-self: flex-start; }
   .diff td:first-child { color: hsl(var(--text-0)); }
-  .arti-note { font-size: 11px; color: hsl(var(--text-2)); }
+  .arti-note { font-size: 12px; color: hsl(var(--text-2)); }
 </style>
 </head><body>
 <div id="nav"></div>

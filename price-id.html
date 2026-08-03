@@ -9,6 +9,7 @@
 <meta property="og:url" content="https://nethack.statico.io/price-id"><meta property="og:type" content="website">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/smui.css">
+<script src="/assets/theme.js"></script>
 <style>
   /* Page-local only. Colors come from smui.css custom properties. */
   .chips { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 1.5); }
@@ -21,14 +22,14 @@
   /* Randomized descriptions are struck through in spirit: they carry no signal. */
   .appr-rand {
     color: hsl(var(--text-2)); font-style: italic; opacity: 0.7;
-    cursor: help; font-size: 11px;
+    cursor: help; font-size: 12px;
   }
   .appr-fixed {
     color: hsl(var(--frost-1)); cursor: help;
     border-bottom: 1px dotted hsl(var(--frost-1) / 0.4);
   }
-  .prob-num { font-size: 11px; color: hsl(var(--text-1)); }
-  .deriv { font-size: 11px; color: hsl(var(--text-1)); }
+  .prob-num { font-size: 12px; color: hsl(var(--text-1)); }
+  .deriv { font-size: 12px; color: hsl(var(--text-1)); }
   .deriv-branch { margin: calc(var(--step) * 2) 0 0; }
   .deriv-step { padding-left: calc(var(--step) * 4); color: hsl(var(--text-2)); }
   .deriv-step::before { content: '· '; color: hsl(var(--frost-2)); }
@@ -38,7 +39,7 @@
   .grp-hd { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--step) * 3); flex-wrap: wrap; }
   .base-n { font-size: 15px; font-weight: 600; color: hsl(var(--text-0)); }
   .lookalikes { column-width: 190px; margin: calc(var(--step) * 2) 0 0; padding-left: 1.1em; }
-  .lookalikes li { font-size: 11px; }
+  .lookalikes li { font-size: 12px; }
 </style>
 </head><body>
 <div id="nav"></div>

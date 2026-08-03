@@ -9,6 +9,7 @@
 <meta property="og:url" content="https://nethack.statico.io/monsters"><meta property="og:type" content="website">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/smui.css">
+<script src="/assets/theme.js"></script>
 <style>
   /* Page-local only. Colors come from smui.css custom properties. */
   /* .seg is inline-flex, but a .field stretches its children; keep it snug */
@@ -32,22 +33,22 @@
   tr.detail > td { background: hsl(var(--surface-2)); padding-top: 0; }
   .badges { display: inline-flex; flex-wrap: wrap; gap: 3px; vertical-align: middle; }
   .atk-list { display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
-  .atk { font-size: 11px; white-space: nowrap; }
+  .atk { font-size: 12px; white-space: nowrap; }
   .atk-dice { color: hsl(var(--text-0)); }
   .atk-kind { color: hsl(var(--text-2)); }
-  .res-list { font-size: 11px; color: hsl(var(--text-1)); min-width: 90px; }
+  .res-list { font-size: 12px; color: hsl(var(--text-1)); min-width: 90px; }
   .sum { display: flex; gap: calc(var(--step) * 9); flex-wrap: wrap; align-items: flex-end; }
   .sum .stat { color: hsl(var(--frost-2)); line-height: 1; }
-  .gate { font-size: 11px; color: hsl(var(--text-1)); }
+  .gate { font-size: 12px; color: hsl(var(--text-1)); }
   .gate b { color: hsl(var(--frost-2)); font-weight: 600; }
   .flagcols { column-width: 210px; column-gap: calc(var(--step) * 6); margin: 0; padding: 0; list-style: none; }
-  .flagcols li { font-size: 11px; color: hsl(var(--text-1)); break-inside: avoid; }
-  .flagcols li code { color: hsl(var(--text-2)); font-size: 10px; }
+  .flagcols li { font-size: 12px; color: hsl(var(--text-1)); break-inside: avoid; }
+  .flagcols li code { color: hsl(var(--text-2)); font-size: 12px; }
   .dl2 { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 2px calc(var(--step) * 3); }
-  .dl2 dt { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: hsl(var(--text-2)); white-space: nowrap; }
-  .dl2 dd { margin: 0; font-size: 11px; color: hsl(var(--text-1)); }
+  .dl2 dt { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: hsl(var(--text-2)); white-space: nowrap; }
+  .dl2 dd { margin: 0; font-size: 12px; color: hsl(var(--text-1)); }
   .prob-cell { min-width: 92px; }
-  .prob-num { font-size: 11px; color: hsl(var(--text-1)); font-variant-numeric: tabular-nums; }
+  .prob-num { font-size: 12px; color: hsl(var(--text-1)); font-variant-numeric: tabular-nums; }
   .toolbar { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 4); align-items: flex-end; }
   .toolbar .field { min-width: 150px; flex: 1 1 150px; }
   .searchwrap { flex: 2 1 240px; }
