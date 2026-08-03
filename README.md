@@ -37,6 +37,50 @@ wiki has been updated for 5.0.
 
 It reports honestly: when six items share a base cost, it says six.
 
+### [Wish](https://nethack.statico.io/wish)
+
+Build a wish string and find out what the game will actually give you.
+
+- **Canonical output.** Adjectives emitted in the order `readobjnam()` in `src/objnam.c`
+  parses them, so it pastes straight into the game.
+- **The annotation is the point.** For each part of the wish it says whether the game honors
+  it, silently drops it, clamps it, or rolls for it — with the `file:line` that proves it.
+  The `rnd(5)` enchantment test *zeroes* your enchantment rather than reducing it, so +7 is
+  never granted; charge counts are capped by whatever `mksobj()` already rolled; negative
+  Luck turns "blessed" into cursed and quietly discards erodeproof and poison.
+- **Artifact odds.** Failure is `rn2(nartifact_exist()) > 1`, so the first two artifacts of a
+  game are free and after that it's (n−2)/n.
+- Enchantment survival probabilities are computed against the real `mksobj_init()`
+  distributions, not assumed.
+
+### [Monsters](https://nethack.statico.io/monsters)
+
+Every monster from the source tables, with a threat filter.
+
+- **What can spawn on me here?** Enter experience level and depth and it runs the game's own
+  `rndmonst()` logic from `src/makemon.c` — the `level_difficulty/6` too-weak floor, the
+  `(depth + XL)/2` ceiling, the `G_NOGEN` / `G_UNIQ` / Gehennom exclusions, `uncommon()`,
+  `align_shift()` and `temperature_shift()`. The percentages shown are exact selection
+  probabilities, not estimates.
+- Full attack lists, resistances held and conveyed, and the `M1`/`M2`/`M3` flags decoded.
+- Dangerous attacks are color-coded off the `AD_*` damage type — a table fact, not an
+  opinion about which monsters are scary.
+
+### [Dungeon Map](https://nethack.statico.io/dungeon)
+
+Every branch on one vertical map, parsed from `dat/dungeon.def` (3.6) and `dat/dungeon.lua`
+(3.7 / 5.0) — two unrelated file formats.
+
+- Branches attach at the exact level ranges their entrances can generate on, with a bracket
+  showing each range.
+- Click any dungeon, branch or special level for its level range, entry rules, flags and
+  map-variant count.
+- Depth is random, so the diagram is drawn at each dungeon's *minimum* depth and
+  bottom-anchored levels are labelled symbolically (`levels N−4 to N−1`) rather than pinned
+  to a number they don't have.
+
+The dungeon files say nothing about shops, temples or altars, so neither does this page.
+
 ### [Sokoban](https://nethack.statico.io/sokoban)
 
 All eight vanilla levels, with maps rendered from `dat/soko*.lua` rather than copied from a
@@ -52,9 +96,9 @@ screenshot.
 
 Goals, ascension kit, and a death log, saved to `localStorage`. Nothing is uploaded.
 
-- Every item name and mechanic links to its wiki article. All 199 link targets are
-  validated against the wiki dump by `scripts/check-links.py`; the build fails on a dead
-  link.
+- Every item name and mechanic links to its wiki article. All link targets across the site —
+  331 of them — are validated against the wiki dump by `scripts/check-links.py`; the build
+  fails on a dead link.
 - **Prayer timer.** Tracks turns since your last prayer against the real mechanic — the
   timeout starts at 300 and resets to `rnz(350)`, which is heavy-tailed. So it shows a
   gradient (risky / marginal / safe) rather than claiming a guarantee it can't make.
@@ -81,6 +125,25 @@ Things worth recording, verified against `NetHack-5.0` @ `a8a13bed8`:
   wiki "Level 1a" is `soko4-2.lua`. Floor 4 is not inverted.
 - **Rolling-boulder traps render as floor**, not `^` — they stay hidden on a premapped
   level. Some wiki maps draw them as `^`.
+- **3.7 and 5.0 are identical in more places than expected.** Beyond the object tables, the
+  monster tables and `dat/dungeon.lua` are also byte-identical apart from comments and
+  version stamps. Each page says so rather than implying its version switch reveals a
+  difference that isn't there.
+- **The Rogue level is defined in all three versions**, not just 3.6. It has no `.des`/`.lua`
+  file because `mklev.c` generates it procedurally.
+- **3.6 has no `mstrength()`.** `makedefs -m` was deprecated there — `do_monstr()` prints a
+  notice and emits a stub — so 3.6 difficulty comes only from the `mons[]` table. 3.7/5.0
+  compute it in `src/mondata.c`, and the formula disagrees with the shipped table for exactly
+  two monsters (cleric and wizard), both `G_NOGEN` player-monsters where hand-set difficulty
+  is explicitly allowed. The table value wins; the discrepancy is asserted in a test.
+- **Horned devil, erinys and barbed devil can never be randomly generated** in any version.
+  `G_HELL` excludes them outside Gehennom, and inside it `uncommon()` rejects
+  `maligntyp > A_NEUTRAL`. They only arrive via demon summoning.
+- **Cross-alignment and crowning do not restrict artifact wishes.** `readobjnam()` checks
+  only `is_quest_artifact()` and the `rn2()` roll. The alignment field is used by
+  `mk_artifact()` for sacrifice gifts, which is where the folklore comes from.
+- **The Palantir of Westernesse is freely wishable** — it sits in the quest-artifact index
+  range but is nobody's `questarti`.
 
 ## Development
 
@@ -100,11 +163,19 @@ of which is vendored here.
 ```sh
 python3 scripts/gen-objects.py     # -> data/objects.json
 python3 scripts/gen-sokoban.py     # -> data/sokoban.json
+python3 scripts/gen-wish.py        # -> data/wish.json
+python3 scripts/gen-monsters.py    # -> data/monsters.json
+python3 scripts/gen-dungeon.py     # -> data/dungeon.json
 python3 scripts/check-links.py     # validates every wiki link target
+
 node scripts/test-prices.mjs       # 44 pricing assertions
+node scripts/test-wish.mjs         # 135 wish-rule assertions
+node scripts/test-monsters.mjs     # 106 monster-table assertions
 ```
 
-Both generators refuse to write output if their verification assertions fail.
+Every generator refuses to write output if its verification assertions fail. They locate
+rules by pattern in the C source and die if the pattern is gone, so an upstream change
+breaks the build loudly instead of silently producing stale numbers.
 
 `data/checklist.json` is authored by hand, not generated — but its link targets are
 validated like everything else.
@@ -138,6 +209,17 @@ probability, Sokoban map, and the entire pricing algorithm — comes from the
 | Object tables (3.6) | `src/objects.c` |
 | Sokoban maps | `dat/soko1-1.lua` … `dat/soko4-2.lua` |
 | Prayer timeout | `src/pray.c`, `src/u_init.c` |
+| Wish parsing | `src/objnam.c` — `readobjnam()` |
+| Wish item defaults | `src/mkobj.c` — `mksobj()`, `mksobj_init()`, `blessorcurse()` |
+| Artifacts | `include/artilist.h`, `src/artifact.c`, `src/do_name.c` |
+| Monster tables (3.7 / 5.0) | `include/monsters.h` |
+| Monster tables (3.6) | `src/monst.c` |
+| Monster flags | `include/permonst.h`, `include/monst.h`, `include/monsym.h` |
+| Monster difficulty | `src/mondata.c` — `mstrength()` |
+| Monster generation | `src/makemon.c` — `rndmonst()`, `uncommon()`, `align_shift()` |
+| Dungeon layout (3.6) | `dat/dungeon.def`, `util/dgn_comp.y` |
+| Dungeon layout (3.7 / 5.0) | `dat/dungeon.lua` |
+| Dungeon placement rules | `src/dungeon.c` — `level_range()`, `init_dungeon_set_entry()` |
 
 NetHack is licensed under the
 [NetHack General Public License](https://www.nethack.org/common/license.html).
@@ -150,7 +232,8 @@ NetHack is licensed under the
 - Sokoban level notes and per-level strategy, condensed from the
   [Sokoban](https://nethackwiki.com/wiki/Sokoban) page and the eight level pages
 - The video links on each level page
-- Every reference link on the checklist — 199 targets, validated against the wiki database dump
+- Every reference link across the site — 331 targets, validated against the wiki database dump
+- Human-readable dungeon and level names, and the article titles they link to
 - Cross-checking the price calculator against
   [Price identification](https://nethackwiki.com/wiki/Price_identification)
 

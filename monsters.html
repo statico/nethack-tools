@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monster Reference &amp; Threat Filter — statico's NetHack Tools</title>
+<meta name="description" content="Every NetHack monster, straight from the source tables, with a threat filter that answers &quot;what can actually spawn on me here?&quot; — an exact port of rndmonst()'s difficulty window and generation weights, for NetHack 3.6, 3.7 and 5.0.">
+<link rel="canonical" href="https://nethack.statico.io/monsters">
+<meta property="og:title" content="Monster Reference &amp; Threat Filter — statico&#39;s NetHack Tools">
+<meta property="og:description" content="Every NetHack monster from the source tables, plus a threat filter that ports rndmonst()'s difficulty window exactly. For 3.6, 3.7 and 5.0.">
+<meta property="og:url" content="https://nethack.statico.io/monsters"><meta property="og:type" content="website">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/smui.css">
+<style>
+  /* Page-local only. Colors come from smui.css custom properties. */
+  /* .seg is inline-flex, but a .field stretches its children; keep it snug */
+  .field > .seg { align-self: flex-start; }
+  .chips { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 1.25); }
+  .chips .btn { padding: calc(var(--step) * 1) calc(var(--step) * 2); letter-spacing: 0; }
+  .sym-chip { font-size: 13px; text-transform: none; min-width: 24px; text-align: center; }
+  .sym {
+    font-weight: 700; font-size: 14px; color: hsl(var(--frost-2));
+    display: inline-block; min-width: 1.2em; text-align: center;
+  }
+  .sym-sp { color: hsl(var(--text-2)); }
+  .mono-n { font-variant-numeric: tabular-nums; text-align: right; }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: hsl(var(--text-0)); }
+  th.sortable[aria-sort]::after { content: ' \25B4'; color: hsl(var(--frost-2)); }
+  th.sortable[aria-sort='descending']::after { content: ' \25BE'; }
+  tr.mrow { cursor: pointer; }
+  tr.mrow:hover td { background: hsl(var(--surface-2) / 0.55); }
+  tr.mrow.open td { background: hsl(var(--surface-2)); }
+  tr.detail > td { background: hsl(var(--surface-2)); padding-top: 0; }
+  .badges { display: inline-flex; flex-wrap: wrap; gap: 3px; vertical-align: middle; }
+  .atk-list { display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
+  .atk { font-size: 11px; white-space: nowrap; }
+  .atk-dice { color: hsl(var(--text-0)); }
+  .atk-kind { color: hsl(var(--text-2)); }
+  .res-list { font-size: 11px; color: hsl(var(--text-1)); min-width: 90px; }
+  .sum { display: flex; gap: calc(var(--step) * 9); flex-wrap: wrap; align-items: flex-end; }
+  .sum .stat { color: hsl(var(--frost-2)); line-height: 1; }
+  .gate { font-size: 11px; color: hsl(var(--text-1)); }
+  .gate b { color: hsl(var(--frost-2)); font-weight: 600; }
+  .flagcols { column-width: 210px; column-gap: calc(var(--step) * 6); margin: 0; padding: 0; list-style: none; }
+  .flagcols li { font-size: 11px; color: hsl(var(--text-1)); break-inside: avoid; }
+  .flagcols li code { color: hsl(var(--text-2)); font-size: 10px; }
+  .dl2 { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 2px calc(var(--step) * 3); }
+  .dl2 dt { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: hsl(var(--text-2)); white-space: nowrap; }
+  .dl2 dd { margin: 0; font-size: 11px; color: hsl(var(--text-1)); }
+  .prob-cell { min-width: 92px; }
+  .prob-num { font-size: 11px; color: hsl(var(--text-1)); font-variant-numeric: tabular-nums; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 4); align-items: flex-end; }
+  .toolbar .field { min-width: 150px; flex: 1 1 150px; }
+  .searchwrap { flex: 2 1 240px; }
+  .numwrap { max-width: 110px; }
+  .legend-key { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 2) calc(var(--step) * 4); }
+  @media (max-width: 640px) {
+    .sum { gap: calc(var(--step) * 5); }
+    .toolbar .field { flex-basis: 100%; }
+  }
+</style>
+</head><body>
+<div id="nav"></div>
+
+<main class="wrap page stack">
+
+  <header class="stack">
+    <div class="row">
+      <h1>Monsters &amp; threat filter</h1>
+      <span class="badge b-frost">3.6 · 3.7 · 5.0</span>
+    </div>
+    <p class="mid" style="max-width:74ch">
+      Every row here is read out of the monster tables in the NetHack source —
+      <code>include/monsters.h</code> for 3.7 and 5.0, <code>src/monst.c</code> for 3.6 —
+      by <code>scripts/gen-monsters.py</code>. The threat filter is a direct port of
+      <code>rndmonst()</code> in <code>src/makemon.c</code>: the same difficulty window, the
+      same <code>G_NOGEN</code>/<code>G_UNIQ</code>/Gehennom exclusions, and the same
+      generation weights, so the percentages below are the game's actual selection
+      probabilities and not an estimate.
+    </p>
+  </header>
+
+  <!-- ===================== threat filter ===================== -->
+  <section class="card card-glow">
+    <div class="card-hd">
+      <span class="label">Threat filter — what can spawn on me here?</span>
+      <span class="small dim" id="ver-note"></span>
+    </div>
+    <div class="card-bd stack">
+      <div class="toolbar">
+        <div class="field numwrap">
+          <label class="label" for="xl">Experience level</label>
+          <input class="big" type="number" id="xl" min="1" max="30" step="1" value="1" inputmode="numeric">
+        </div>
+        <div class="field numwrap">
+          <label class="label" for="dl">Dungeon level</label>
+          <input class="big" type="number" id="dl" min="1" max="53" step="1" value="1" inputmode="numeric">
+        </div>
+        <div class="field">
+          <span class="label">Branch</span>
+          <div class="seg" id="hell" role="group" aria-label="Branch">
+            <button class="btn" data-hell="0" aria-pressed="true">Main dungeon</button>
+            <button class="btn" data-hell="1" aria-pressed="false">Gehennom</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="align">Level alignment</label>
+          <select id="align">
+            <option value="none">Unaligned (most levels)</option>
+            <option value="lawful">Lawful</option>
+            <option value="neutral">Neutral</option>
+            <option value="chaotic">Chaotic</option>
+          </select>
+        </div>
+        <div class="field">
+          <span class="label">Table</span>
+          <div class="seg" id="ver" role="group" aria-label="NetHack version">
+            <button class="btn" data-ver="3.6" aria-pressed="false">3.6</button>
+            <button class="btn" data-ver="3.7-5.0" aria-pressed="true">3.7 / 5.0</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sum" id="threat-sum"></div>
+      <div class="gate" id="threat-gate"></div>
+
+      <div class="row">
+        <button class="btn" id="threat-on" aria-pressed="true">Show only what can spawn here</button>
+        <button class="btn" id="threat-reset">Reset to XL 1 / DL 1</button>
+      </div>
+
+      <p class="small dim" style="margin:0;max-width:88ch">
+        <code>level_difficulty()</code> is normally just the depth of the level, so the
+        dungeon level field is that depth. It is <em>not</em> your depth if you are carrying
+        the Amulet (then it is the deepest level you ever reached) or in the endgame. The
+        level alignment shifts every monster's weight by <code>align_shift()</code>; ordinary
+        dungeon levels are unaligned, so leave it there unless you are somewhere special.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== filters ===================== -->
+  <section class="card">
+    <div class="card-hd"><span class="label">Filter</span>
+      <button class="btn" id="clear-all">Clear filters</button>
+    </div>
+    <div class="card-bd stack">
+      <div class="toolbar">
+        <div class="field searchwrap">
+          <label class="label" for="q">Search by name</label>
+          <input type="text" id="q" placeholder="e.g. cockatrice, mind flayer" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="label" for="conv">Conveys when eaten</label>
+          <select id="conv"><option value="">Any</option></select>
+        </div>
+        <div class="field">
+          <label class="label" for="resist">Resistance held</label>
+          <select id="resist"><option value="">Any</option></select>
+        </div>
+        <div class="field">
+          <label class="label" for="danger">Dangerous attack</label>
+          <select id="danger"><option value="">Any</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <span class="label">Monster class</span>
+        <div class="chips" id="classes"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== table ===================== -->
+  <section class="card">
+    <div class="card-hd">
+      <span class="label">Monsters <span id="count" class="dim"></span></span>
+      <span class="small dim">click a row for full flags</span>
+    </div>
+    <div class="tbl-scroll">
+      <table class="tbl" id="tbl">
+        <thead><tr id="head"></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div id="empty"></div>
+  </section>
+
+  <!-- ===================== notes ===================== -->
+  <section class="card">
+    <div class="card-hd"><span class="label">How the generation rule works</span></div>
+    <div class="card-bd stack">
+      <details open>
+        <summary>The exact rule, from <code>rndmonst()</code></summary>
+        <div class="stack" style="gap:calc(var(--step)*2);font-size:12px;color:hsl(var(--text-1))">
+          <p style="margin:0">Every time the game wants a random monster it walks
+          <code>mons[]</code> from the first entry up to but not including
+          <code>SPECIAL_PM</code> (the long worm tail; everything from there on is quest
+          and endgame material that is never generated randomly) and keeps the entries
+          that pass all of:</p>
+          <ul style="margin:0;padding-left:1.2em">
+            <li><code>difficulty &gt;= level_difficulty / 6</code> — the too-weak cutoff.
+              This is why sewer rats stop showing up.</li>
+            <li><code>difficulty &lt;= (level_difficulty + experience_level) / 2</code> —
+              the ceiling. Note your <em>experience level</em> is half of it: levelling up
+              is what lets nastier things appear, not just going deeper.</li>
+            <li>not <code>G_NOGEN</code> and not <code>G_UNIQ</code>.</li>
+            <li>outside Gehennom, not <code>G_HELL</code>; inside Gehennom, not
+              <code>G_NOHELL</code>, and only monsters whose alignment is 0 or negative.</li>
+          </ul>
+          <p style="margin:0">Each survivor gets a weight of
+          <code>(geno &amp; G_FREQ) + align_shift()</code>, plus 3 in 3.7/5.0 if the level
+          has a temperature the monster resists. A weight of zero means it is never picked.
+          One survivor is then chosen with probability weight ÷ total weight — 3.6 walks a
+          running total, 3.7 and 5.0 use weighted reservoir sampling, which gives the same
+          distribution.</p>
+          <p style="margin:0"><strong>What this page cannot know:</strong> whether you have
+          genocided or extinct-ed something (<code>mvitals[]</code>), the quest branch's own
+          monster list (<code>qt_montype()</code>, used 6 times out of 7 there), the Rogue
+          level's uppercase-only filter, the elemental planes, and
+          <code>goodpos()</code> rejecting a monster that cannot survive on the square that
+          was picked. Special levels and Sokoban also place monsters directly. Treat the
+          list as "what the random generator may hand you", not as everything you will meet.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Where difficulty comes from</summary>
+        <div class="stack" style="gap:calc(var(--step)*2);font-size:12px;color:hsl(var(--text-1))" id="diff-note"></div>
+      </details>
+      <details>
+        <summary>Attack severity colours</summary>
+        <div class="stack" style="gap:calc(var(--step)*2);font-size:12px;color:hsl(var(--text-1))">
+          <p style="margin:0">The colour on an attack is keyed off its <code>AD_*</code>
+          damage type, which is a fact from the table — not a judgement about the monster.
+          <span class="badge b-red">red</span> marks damage types that can end a game outright
+          or take something back permanently: petrification, sliming, disintegration, level
+          drain, digestion, and the Riders' touches.
+          <span class="badge b-orange">orange</span> marks damage that costs you equipment,
+          stats, items or control: disenchantment, corrosion and rust, seduction and theft,
+          paralysis, the stat drains, lycanthropy, teleport, polymorph.
+          <span class="badge b-yellow">yellow</span> marks the merely inconvenient — stun,
+          confusion, blindness, sleep, sticking.</p>
+          <div class="legend-key" id="sev-key"></div>
+        </div>
+      </details>
+      <details>
+        <summary>Differences between the versions</summary>
+        <div class="stack" style="gap:calc(var(--step)*2);font-size:12px;color:hsl(var(--text-1))" id="verdiff"></div>
+      </details>
+      <p class="small dim" id="src-note" style="margin:0"></p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer wrap credits">
+  <dl>
+    <dt>Monster tables</dt>
+    <dd>
+      Generated from <code>include/monsters.h</code> (3.7 / 5.0) and
+      <code>src/monst.c</code> (3.6) of the
+      <a href="https://github.com/NetHack/NetHack" rel="noopener">NetHack source</a>
+      by the DevTeam, under the
+      <a href="https://www.nethack.org/common/license.html" rel="noopener">NetHack General Public License</a>.
+      Flag names and bit values come from <code>include/monflag.h</code> and
+      <code>include/monattk.h</code> of the same branch.
+    </dd>
+
+    <dt>Generation rule</dt>
+    <dd>
+      Ported from <code>rndmonst()</code> / <code>rndmonst_adj()</code>,
+      <code>uncommon()</code> and <code>align_shift()</code> in <code>src/makemon.c</code>,
+      with the difficulty window from <code>monmin_difficulty()</code> /
+      <code>monmax_difficulty()</code> in <code>include/monst.h</code>, same source and license.
+    </dd>
+
+    <dt>Difficulty</dt>
+    <dd>
+      The <code>difficulty</code> column of the monster table. For 3.7 and 5.0 it is
+      re-derived from <code>mstrength()</code> in <code>src/mondata.c</code> and checked
+      row by row; 3.6 ships no such function, so its table is taken as given.
+    </dd>
+
+    <dt>Reference</dt>
+    <dd>
+      <a href="https://nethackwiki.com/wiki/Monster" class="wiki" target="_blank" rel="noopener">Monster</a>
+      and
+      <a href="https://nethackwiki.com/wiki/Monster_difficulty" class="wiki" target="_blank" rel="noopener">Monster difficulty</a>
+      on <a href="https://nethackwiki.com/" rel="noopener">NetHackWiki</a>, licensed
+      <a href="https://creativecommons.org/licenses/by-sa/3.0/" rel="noopener">CC BY-SA 3.0</a> —
+      used to cross-check this implementation, which is derived from the source rather than
+      from the wiki's tables. Every monster name links to its wiki article.
+    </dd>
+
+    <dt>Design</dt>
+    <dd>
+      Styled after <a href="https://smui.statico.io/" rel="noopener">SMUI</a>, using the
+      <a href="https://www.nordtheme.com/" rel="noopener">Nord</a> palette by Arctic Ice Studio
+      and <a href="https://www.jetbrains.com/lp/mono/" rel="noopener">JetBrains Mono</a>.
+    </dd>
+  </dl>
+
+  <div class="meta-bar">
+    <span>Built by statico &middot; <code>@statico</code> on Discord &middot; not affiliated with the NetHack DevTeam.</span>
+    <span class="links">
+      <a href="https://github.com/statico/nethack-tools" rel="noopener">Source on GitHub</a>
+    </span>
+  </div>
+</footer>
+
+<script src="/assets/nav.js"></script>
+<script src="/assets/monster-engine.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var E = window.MonsterEngine;
+  var DATA = null;
+  var LEG = null;
+
+  var state = {
+    version: '3.7-5.0',
+    xl: 1,
+    dl: 1,
+    hell: false,
+    align: 'none',
+    threatOnly: true,
+    q: '',
+    classes: null,       /* null = all; otherwise a map of symbol -> true */
+    conv: '',
+    resist: '',
+    danger: '',
+    sort: 'd',
+    dir: -1,
+    open: -1             /* mons[] index of the expanded row */
+  };
+
+  /* Keyed by mons[] index, never by name: the three lycanthropes each occupy
+     two rows of mons[] under the same name (@ form and animal form) with
+     different stats, so a name is not a key. */
+  var poolCache = null;  /* { key, byIdx, total, conditions } */
+
+  /* ---------- helpers ---------- */
+
+  function el(id) { return document.getElementById(id); }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function wikiUrl(name) {
+    var t = name.charAt(0).toUpperCase() + name.slice(1);
+    return 'https://nethackwiki.com/wiki/' +
+      encodeURIComponent(t.replace(/ /g, '_')).replace(/%2F/g, '/');
+  }
+
+  function version() { return DATA.versions[state.version]; }
+  function mons() { return version().mons; }
+
+  function symLabel(ch) {
+    if (ch === ' ') return '␣';        /* open box, for the ghost class */
+    return ch;
+  }
+
+  /* ---------- pool ---------- */
+
+  function poolKey() {
+    return [state.version, state.xl, state.dl, state.hell ? 1 : 0, state.align].join('|');
+  }
+
+  function getPool() {
+    var k = poolKey();
+    if (poolCache && poolCache.key === k) return poolCache;
+    var p = E.pool(mons(), {
+      levelDifficulty: state.dl,
+      ulevel: state.xl,
+      inHell: state.hell,
+      align: state.align,
+      specialPm: version().special_pm
+    });
+    var byIdx = {};
+    p.list.forEach(function (h) { byIdx[h.index] = h; });
+    poolCache = { key: k, byIdx: byIdx, total: p.total, conditions: p.conditions,
+                  count: p.list.length, max: p.list.reduce(function (m, h) {
+                    return Math.max(m, h.chance); }, 0) };
+    return poolCache;
+  }
+
+  /* ---------- filtering ---------- */
+
+  /* `!== false` so a class that only exists in the other version's table
+     defaults to on rather than silently disappearing after a version switch */
+  function classOn(ch) { return !state.classes || state.classes[ch] !== false; }
+
+  function matches(m, idx, pool) {
+    if (state.threatOnly && !pool.byIdx[idx]) return false;
+    if (!classOn(m.s)) return false;
+    if (state.q) {
+      var hay = m.n.toLowerCase() + ' ' + ((m.an || []).join(' ').toLowerCase());
+      if (hay.indexOf(state.q) < 0) return false;
+    }
+    if (state.conv && !(m.cv & Number(state.conv))) return false;
+    if (state.resist && !(m.re & Number(state.resist))) return false;
+    if (state.danger) {
+      var want = state.danger;
+      var hit = false;
+      for (var i = 0; i < m.a.length; i++) {
+        if (want.charAt(0) === '#') {
+          var ad = LEG.ad[String(m.a[i][1])];
+          if (ad && ad.length > 2 && ad[2] === want.slice(1)) { hit = true; break; }
+        } else if (String(m.a[i][1]) === want) { hit = true; break; }
+      }
+      if (!hit) return false;
+    }
+    return true;
+  }
+
+  var SORTS = {
+    n: function (m) { return m.n.toLowerCase(); },
+    s: function (m) { return m.s; },
+    d: function (m) { return m.d; },
+    lv: function (m) { return m.lv; },
+    mv: function (m) { return m.mv; },
+    ac: function (m) { return m.ac; },
+    mr: function (m) { return m.mr; },
+    al: function (m) { return m.al; },
+    f: function (m) { return E.frequency(m); },
+    p: function (m, i) {
+      var h = getPool().byIdx[i];
+      return h ? h.chance : -1;
+    }
+  };
+
+  /* Returns [{ m, i }] — i is the mons[] index and is the row's identity. */
+  function filtered() {
+    var pool = getPool();
+    var all = mons();
+    var list = [];
+    for (var i = 0; i < all.length; i++) {
+      if (matches(all[i], i, pool)) list.push({ m: all[i], i: i });
+    }
+    var key = SORTS[state.sort] || SORTS.n;
+    var dir = state.dir;
+    list.sort(function (a, b) {
+      var ka = key(a.m, a.i), kb = key(b.m, b.i);
+      if (ka < kb) return -dir;
+      if (ka > kb) return dir;
+      return a.m.n < b.m.n ? -1 : a.m.n > b.m.n ? 1 : a.i - b.i;
+    });
+    return list;
+  }
+
+  /* ---------- cell renderers ---------- */
+
+  function attacksCell(m) {
+    if (!m.a.length) return '<span class="dim">none</span>';
+    return '<div class="atk-list">' + m.a.map(function (a) {
+      var t = E.attackText(a, LEG);
+      var cls = t.severity ? ' b-' + t.severity : ' b-dim';
+      var kind = t.ad === 'physical'
+        ? '<span class="atk-kind">' + esc(t.at) + '</span>'
+        : '<span class="atk-kind">' + esc(t.at) + '</span> ' +
+          '<span class="badge' + cls + '">' + esc(t.ad) + '</span>';
+      return '<div class="atk"><span class="atk-dice">' +
+        (t.dice ? esc(t.dice) : '&mdash;') + '</span> ' + kind + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function bitsText(value, legend) {
+    var b = E.bits(value, legend);
+    if (!b.length) return '<span class="dim">&mdash;</span>';
+    return b.map(function (x) { return esc(x.label); }).join(', ');
+  }
+
+  function genoBadges(m) {
+    var out = [];
+    var g = E.groupSize(m);
+    if (g) out.push('<span class="badge b-frost">' + g + '</span>');
+    if (m.g & E.G_UNIQ) out.push('<span class="badge b-purple">unique</span>');
+    if (m.g & E.G_NOGEN) out.push('<span class="badge b-dim">not random</span>');
+    if (m.g & E.G_HELL) out.push('<span class="badge b-orange">Gehennom only</span>');
+    if (m.g & E.G_NOHELL) out.push('<span class="badge b-dim">not in Gehennom</span>');
+    return out.length ? ' <span class="badges">' + out.join('') + '</span>' : '';
+  }
+
+  function probCell(idx) {
+    var pool = getPool();
+    var h = pool.byIdx[idx];
+    if (!h) return '<span class="dim">&mdash;</span>';
+    var pct = h.chance * 100;
+    return '<span class="prob-num">' + pct.toFixed(pct < 1 ? 2 : 1) + '%</span>' +
+      '<div class="meter"><span style="width:' +
+      Math.max(2, Math.round((h.chance / (pool.max || 1)) * 100)) + '%"></span></div>';
+  }
+
+  function detailRow(m, idx, cols) {
+    var pool = getPool();
+    var h = pool.byIdx[idx];
+    var reasons = E.rejections(m, idx, pool.conditions);
+    var gen = h
+      ? 'Can be generated here. Weight ' + h.weight + ' of ' + pool.total +
+        ' &rarr; ' + (h.chance * 100).toFixed(2) + '% of each random monster roll.'
+      : 'Cannot be generated here: ' + reasons.map(esc).join('; ') + '.';
+
+    function flagList(value, legend) {
+      var b = E.bits(value, legend);
+      if (!b.length) return '<li class="dim">none</li>';
+      return b.map(function (x) {
+        return '<li>' + esc(x.label) + ' <code>' + esc(x.sym) + '</code></li>';
+      }).join('');
+    }
+
+    return '<tr class="detail"><td colspan="' + cols + '">' +
+      '<div class="stack" style="gap:calc(var(--step)*3);padding:calc(var(--step)*2) 0">' +
+        '<div class="note">' + gen + '</div>' +
+        '<dl class="dl2">' +
+          (m.an && m.an.length
+            ? '<dt>Also called</dt><dd>' + esc(m.an.join(', ')) + '</dd>' : '') +
+          '<dt>Class</dt><dd>' + esc(LEG.classes[m.s] || '?') +
+            ' <span class="dim">(' + esc(symLabel(m.s)) + ')</span></dd>' +
+          '<dt>Size</dt><dd>' + esc(LEG.size[String(m.sz)] || m.sz) + '</dd>' +
+          '<dt>Corpse</dt><dd>' + m.wt + ' weight, ' + m.nu + ' nutrition' +
+            ((m.g & 0x0010) ? ' <span class="badge b-dim">never leaves a corpse</span>' : '') +
+            '</dd>' +
+          '<dt>Generation</dt><dd>frequency ' + E.frequency(m) +
+            ', geno mask 0x' + m.g.toString(16) + ' &rarr; ' +
+            bitsText(m.g, LEG.g) + '</dd>' +
+          '<dt>Resists</dt><dd>' + bitsText(m.re, LEG.mr) + '</dd>' +
+          '<dt>Conveys</dt><dd>' + bitsText(m.cv, LEG.mr) + '</dd>' +
+        '</dl>' +
+        '<div><span class="label">M1 — body &amp; behaviour</span>' +
+          '<ul class="flagcols">' + flagList(m.f1, LEG.m1) + '</ul></div>' +
+        '<div><span class="label">M2 — kind &amp; disposition</span>' +
+          '<ul class="flagcols">' + flagList(m.f2, LEG.m2) + '</ul></div>' +
+        '<div><span class="label">M3 — wants &amp; senses</span>' +
+          '<ul class="flagcols">' + flagList(m.f3, LEG.m3) + '</ul></div>' +
+      '</div>' +
+    '</td></tr>';
+  }
+
+  /* ---------- render ---------- */
+
+  var COLS = [
+    { k: 's', t: '', sort: 's' },
+    { k: 'n', t: 'Monster', sort: 'n' },
+    { k: 'p', t: 'Chance here', sort: 'p' },
+    { k: 'd', t: 'Diff', sort: 'd' },
+    { k: 'lv', t: 'Lvl', sort: 'lv' },
+    { k: 'mv', t: 'Speed', sort: 'mv' },
+    { k: 'ac', t: 'AC', sort: 'ac' },
+    { k: 'mr', t: 'MR', sort: 'mr' },
+    { k: 'al', t: 'Align', sort: 'al' },
+    { k: 'f', t: 'Freq', sort: 'f' },
+    { k: 'a', t: 'Attacks' },
+    { k: 're', t: 'Resists' },
+    { k: 'cv', t: 'Conveys' }
+  ];
+
+  function renderHead() {
+    el('head').innerHTML = COLS.map(function (c) {
+      if (!c.sort) return '<th>' + esc(c.t) + '</th>';
+      var cur = state.sort === c.sort;
+      return '<th class="sortable" data-sort="' + c.sort + '"' +
+        (cur ? ' aria-sort="' + (state.dir > 0 ? 'ascending' : 'descending') + '"' : '') +
+        ' title="Sort by ' + esc(c.t || 'symbol') + '">' + esc(c.t) + '</th>';
+    }).join('');
+  }
+
+  function render() {
+    if (!DATA) return;
+    renderThreat();
+    renderHead();
+
+    var list = filtered();
+    var cols = COLS.length;
+    var out = [];
+
+    for (var r = 0; r < list.length; r++) {
+      var m = list[r].m;
+      var i = list[r].i;
+      var open = state.open === i;
+      out.push('<tr class="mrow' + (open ? ' open' : '') + '" data-i="' + i + '">' +
+        '<td><span class="sym' + (m.s === ' ' ? ' sym-sp' : '') + '">' +
+          esc(symLabel(m.s)) + '</span></td>' +
+        '<td><a class="wiki" href="' + wikiUrl(m.n) + '" target="_blank" rel="noopener">' +
+          esc(m.n) + '</a>' + genoBadges(m) + '</td>' +
+        '<td class="prob-cell">' + probCell(i) + '</td>' +
+        '<td class="mono-n">' + m.d + '</td>' +
+        '<td class="mono-n">' + m.lv + '</td>' +
+        '<td class="mono-n">' + m.mv + '</td>' +
+        '<td class="mono-n">' + m.ac + '</td>' +
+        '<td class="mono-n">' + (m.mr ? m.mr + '%' : '<span class="dim">0</span>') + '</td>' +
+        '<td class="mono-n">' + m.al + '</td>' +
+        '<td class="mono-n">' + E.frequency(m) + '</td>' +
+        '<td>' + attacksCell(m) + '</td>' +
+        '<td class="res-list">' + bitsText(m.re, LEG.mr) + '</td>' +
+        '<td class="res-list">' + bitsText(m.cv, LEG.mr) + '</td>' +
+      '</tr>');
+      if (open) out.push(detailRow(m, i, cols));
+    }
+
+    el('rows').innerHTML = out.join('');
+    el('count').textContent = '— ' + list.length + ' of ' + mons().length;
+    el('empty').innerHTML = list.length ? '' :
+      '<div class="empty">Nothing matches. Widen the class filter, clear the search, ' +
+      'or turn off &ldquo;show only what can spawn here&rdquo;.</div>';
+  }
+
+  function renderThreat() {
+    var pool = getPool();
+    var c = pool.conditions;
+    el('threat-sum').innerHTML =
+      '<div><div class="stat">' + pool.count + '</div>' +
+        '<div class="label">monster type' + (pool.count === 1 ? '' : 's') + ' can appear</div></div>' +
+      '<div><div class="stat">' + c.minmlev + '&ndash;' + c.maxmlev + '</div>' +
+        '<div class="label">difficulty window</div></div>' +
+      '<div><div class="stat">' + pool.total + '</div>' +
+        '<div class="label">total generation weight</div></div>';
+    el('threat-gate').innerHTML =
+      'minimum difficulty = <b>' + c.levelDifficulty + ' / 6 = ' + c.minmlev + '</b>' +
+      ' &nbsp;·&nbsp; maximum difficulty = <b>(' + c.levelDifficulty + ' + ' +
+      c.ulevel + ') / 2 = ' + c.maxmlev + '</b>' +
+      (c.inHell ? ' &nbsp;·&nbsp; Gehennom: no G_NOHELL, no positive alignment' : '') +
+      (c.align !== 'none' ? ' &nbsp;·&nbsp; ' + c.align + ' level: every weight shifted by align_shift()' : '');
+  }
+
+  function renderClasses() {
+    var counts = {};
+    mons().forEach(function (m) { counts[m.s] = (counts[m.s] || 0) + 1; });
+    var syms = Object.keys(counts);
+    el('classes').innerHTML = syms.map(function (ch) {
+      var on = classOn(ch);
+      return '<button class="btn sym-chip" data-cls="' + esc(ch) + '" aria-pressed="' + on +
+        '" title="' + esc(LEG.classes[ch] || '') + ' — ' + counts[ch] + '">' +
+        esc(symLabel(ch)) + '</button>';
+    }).join('');
+  }
+
+  function renderSelects() {
+    var mr = LEG.mr.map(function (b) {
+      return '<option value="' + b[0] + '">' + esc(b[2]) + '</option>';
+    }).join('');
+    el('conv').innerHTML = '<option value="">Any</option>' + mr;
+    el('resist').innerHTML = '<option value="">Any</option>' + mr;
+
+    var groups = { red: [], orange: [], yellow: [] };
+    Object.keys(LEG.ad).forEach(function (code) {
+      var a = LEG.ad[code];
+      if (a.length > 2) groups[a[2]].push([code, a[1]]);
+    });
+    var opts = '<option value="">Any</option>';
+    ['red', 'orange', 'yellow'].forEach(function (sev) {
+      var name = sev === 'red' ? 'game-ending' : sev === 'orange' ? 'costly' : 'annoying';
+      opts += '<option value="#' + sev + '">Any ' + name + ' attack</option>';
+    });
+    ['red', 'orange', 'yellow'].forEach(function (sev) {
+      groups[sev].sort(function (a, b) { return a[1] < b[1] ? -1 : 1; });
+      opts += '<optgroup label="' + (sev === 'red' ? 'Game-ending'
+        : sev === 'orange' ? 'Costly' : 'Annoying') + '">' +
+        groups[sev].map(function (g) {
+          return '<option value="' + g[0] + '">' + esc(g[1]) + '</option>';
+        }).join('') + '</optgroup>';
+    });
+    el('danger').innerHTML = opts;
+
+    el('sev-key').innerHTML = ['red', 'orange', 'yellow'].map(function (sev) {
+      var name = sev === 'red' ? 'game-ending' : sev === 'orange' ? 'costly' : 'annoying';
+      return '<span class="badge b-' + sev + '">' + name + ': ' +
+        groups[sev].length + ' damage types</span>';
+    }).join('');
+  }
+
+  function renderNotes() {
+    var f = DATA.formulas;
+    var mism = f.difficulty.mismatches_3_7_5_0 || [];
+    el('diff-note').innerHTML =
+      '<p style="margin:0">Difficulty is a real column in the monster table — ' +
+        esc(f.difficulty.field) + ' — and it is what the generation window is compared ' +
+        'against. It is not the monster\'s level.</p>' +
+      '<p style="margin:0"><strong>3.7 / 5.0:</strong> ' + esc(f.difficulty['3.7-5.0']) +
+        '</p>' +
+      '<p style="margin:0"><strong>3.6:</strong> ' + esc(f.difficulty['3.6']) + '</p>' +
+      (mism.length
+        ? '<p style="margin:0">Re-deriving <code>mstrength()</code> over the whole 3.7/5.0 ' +
+          'table reproduces every value except ' +
+          mism.map(function (r) {
+            return '<strong>' + esc(r[0]) + '</strong> (table ' + r[1] +
+              ', formula ' + r[2] + ')';
+          }).join(' and ') + '. Both are <code>G_NOGEN</code> player-monsters, and the ' +
+          'source explicitly allows hand-set difficulty values. The table value is what ' +
+          'the game uses and what is shown here.</p>'
+        : '') +
+      '<p style="margin:0">Generation gates: <code>' + esc(f.generation.min) +
+        '</code> and <code>' + esc(f.generation.max) + '</code>, from ' +
+        esc(f.generation.gates['3.7-5.0']) + ' (3.7 / 5.0) and ' +
+        esc(f.generation.gates['3.6']) + ' (3.6). Eligibility: ' +
+        esc(f.generation.uncommon['3.7-5.0']) + ' / ' +
+        esc(f.generation.uncommon['3.6']) + '.</p>' +
+      '<p style="margin:0">Weights: <code>' + esc(f.generation.weight) + '</code> — ' +
+        esc(f.generation.align_shift.rule) + '</p>';
+
+    /* real, computed differences between the two tables */
+    var a = {}, b = {};
+    DATA.versions['3.6'].mons.forEach(function (m) { a[m.n] = m; });
+    DATA.versions['3.7-5.0'].mons.forEach(function (m) { b[m.n] = m; });
+    var added = Object.keys(b).filter(function (n) { return !a[n]; });
+    var gone = Object.keys(a).filter(function (n) { return !b[n]; });
+    var diffChanged = Object.keys(a).filter(function (n) {
+      return b[n] && b[n].d !== a[n].d;
+    });
+    el('verdiff').innerHTML =
+      '<p style="margin:0">3.7 and 5.0 ship a byte-identical monster table (the only ' +
+        'differences are comments and the version stamp), so they share one dataset here. ' +
+        'Against 3.6:</p>' +
+      '<p style="margin:0"><strong>' + added.length + ' names appear that 3.6 does not have</strong> — ' +
+        esc(added.join(', ')) + '. Some are genuinely new monsters (gold dragon, ' +
+        'displacer beast, genetic engineer); most are renames of the ' + gone.length +
+        ' names 3.6 has and 3.7 does not: ' + esc(gone.join(', ')) + '.</p>' +
+      '<p style="margin:0"><strong>' + diffChanged.length + ' monsters changed difficulty</strong>: ' +
+        diffChanged.map(function (n) {
+          return esc(n) + ' ' + a[n].d + '&rarr;' + b[n].d;
+        }).join(', ') + '.</p>' +
+      '<p style="margin:0">Three monsters — <strong>horned devil</strong>, ' +
+        '<strong>erinys</strong> and <strong>barbed devil</strong> — carry ' +
+        '<code>G_HELL</code> and a positive alignment in every version, which means ' +
+        '<code>rndmonst()</code> can never produce them: outside Gehennom ' +
+        '<code>G_HELL</code> rules them out, and inside it <code>uncommon()</code> rejects ' +
+        'anything with <code>maligntyp &gt; A_NEUTRAL</code>. They only ever arrive by ' +
+        'demon summoning.</p>';
+
+    var g = DATA.generated_from || {};
+    el('src-note').textContent = 'Monster tables generated ' + (g.generated || '?') +
+      ' from NetHack commit ' + String(g.repo_commit || '?').slice(0, 10) + '.';
+    el('ver-note').textContent = version().label;
+  }
+
+  /* ---------- events ---------- */
+
+  function invalidate(full) {
+    poolCache = null;
+    if (full) { renderClasses(); }
+    render();
+  }
+
+  el('ver').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-ver]');
+    if (!b) return;
+    state.version = b.getAttribute('data-ver');
+    state.open = -1;
+    Array.prototype.forEach.call(this.querySelectorAll('button'), function (x) {
+      x.setAttribute('aria-pressed', String(x === b));
+    });
+    el('ver-note').textContent = version().label;
+    invalidate(true);
+  });
+
+  el('hell').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-hell]');
+    if (!b) return;
+    state.hell = b.getAttribute('data-hell') === '1';
+    Array.prototype.forEach.call(this.querySelectorAll('button'), function (x) {
+      x.setAttribute('aria-pressed', String(x === b));
+    });
+    invalidate();
+  });
+
+  function numHandler(id, key, lo, hi) {
+    el(id).addEventListener('input', function () {
+      var v = parseInt(this.value, 10);
+      state[key] = isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo;
+      invalidate();
+    });
+  }
+  numHandler('xl', 'xl', 1, 30);
+  numHandler('dl', 'dl', 1, 60);
+
+  el('align').addEventListener('change', function () {
+    state.align = this.value;
+    invalidate();
+  });
+
+  el('threat-on').addEventListener('click', function () {
+    state.threatOnly = !state.threatOnly;
+    this.setAttribute('aria-pressed', String(state.threatOnly));
+    render();
+  });
+
+  el('threat-reset').addEventListener('click', function () {
+    state.xl = 1; state.dl = 1; state.hell = false; state.align = 'none';
+    el('xl').value = 1; el('dl').value = 1; el('align').value = 'none';
+    Array.prototype.forEach.call(el('hell').querySelectorAll('button'), function (x) {
+      x.setAttribute('aria-pressed', String(x.getAttribute('data-hell') === '0'));
+    });
+    invalidate();
+  });
+
+  el('q').addEventListener('input', function () {
+    state.q = this.value.trim().toLowerCase();
+    render();
+  });
+
+  ['conv', 'resist', 'danger'].forEach(function (id) {
+    el(id).addEventListener('change', function () {
+      state[id] = this.value;
+      render();
+    });
+  });
+
+  el('classes').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-cls]');
+    if (!b) return;
+    if (!state.classes) {
+      state.classes = {};
+      mons().forEach(function (m) { state.classes[m.s] = true; });
+    }
+    var ch = b.getAttribute('data-cls');
+    state.classes[ch] = !state.classes[ch];
+    b.setAttribute('aria-pressed', String(!!state.classes[ch]));
+    render();
+  });
+
+  el('clear-all').addEventListener('click', function () {
+    state.q = ''; state.classes = null; state.conv = ''; state.resist = '';
+    state.danger = ''; state.open = -1;
+    el('q').value = ''; el('conv').value = ''; el('resist').value = '';
+    el('danger').value = '';
+    renderClasses();
+    render();
+  });
+
+  el('head').addEventListener('click', function (e) {
+    var th = e.target.closest('th[data-sort]');
+    if (!th) return;
+    var k = th.getAttribute('data-sort');
+    if (state.sort === k) state.dir = -state.dir;
+    else { state.sort = k; state.dir = (k === 'n' || k === 's') ? 1 : -1; }
+    render();
+  });
+
+  el('rows').addEventListener('click', function (e) {
+    if (e.target.closest('a')) return;
+    var tr = e.target.closest('tr.mrow');
+    if (!tr) return;
+    var i = Number(tr.getAttribute('data-i'));
+    state.open = state.open === i ? -1 : i;
+    render();
+  });
+
+  /* ---------- boot ---------- */
+
+  el('rows').innerHTML =
+    '<tr><td colspan="13"><div class="empty">Loading monster tables…</div></td></tr>';
+
+  fetch('/data/monsters.json')
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function (d) {
+      DATA = d;
+      LEG = d.legend;
+      renderSelects();
+      renderClasses();
+      renderNotes();
+      render();
+    })
+    .catch(function (err) {
+      el('rows').innerHTML = '';
+      el('empty').innerHTML = '<div class="card-bd"><div class="note note-red">' +
+        'Could not load <code>/data/monsters.json</code> (' + esc(err.message) +
+        '). Nothing on this page works without it.</div></div>';
+    });
+})();
+</script>
+</body></html>

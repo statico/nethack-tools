@@ -31,6 +31,9 @@ DUMP = os.path.join(
 # any file whose structure contains {"page": "..."} objects works as-is.
 DATA_FILES = [
     "data/checklist.json",
+    "data/dungeon.json",
+    "data/monsters.json",
+    "data/wish.json",
 ]
 
 TITLE_RE = re.compile(r"<title>(.*?)</title>")

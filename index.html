@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>statico's NetHack Tools</title>
-<meta name="description" content="Player tools for NetHack 3.6, 3.7 and 5.0 — price identification calculator, Sokoban helper with solution videos, and a persistent ascension checklist.">
+<meta name="description" content="Player tools for NetHack 3.6, 3.7 and 5.0 — price identification, a wish builder, a monster threat filter, a dungeon branch map, a Sokoban helper, and a persistent ascension checklist.">
 <link rel="canonical" href="https://nethack.statico.io/">
 <meta property="og:title" content="statico&#39;s NetHack Tools">
 <meta property="og:description" content="Price ID calculator, Sokoban helper, and ascension checklist for NetHack 3.6, 3.7 and 5.0.">
@@ -68,6 +68,62 @@
           often they actually generate.
         </p>
         <span class="go">Open calculator &rarr;</span>
+      </div>
+    </a>
+
+    <a class="card card-glow tool" href="/wish">
+      <div class="card-hd">
+        <h2>Wish</h2>
+        <span class="badge b-dim">Builder</span>
+      </div>
+      <div class="card-bd">
+        <p>
+          Build a wish and see what the game will actually hand you. Emits the
+          canonical string in the order <code>readobjnam()</code> parses it.
+        </p>
+        <p>
+          The useful half is underneath: which parts get honored, dropped, clamped, or
+          left to a dice roll &mdash; the <code>rnd(5)</code> test that turns +7 into +0,
+          the charge cap, the negative-Luck traps, and the artifact failure odds.
+        </p>
+        <span class="go">Open builder &rarr;</span>
+      </div>
+    </a>
+
+    <a class="card card-glow tool" href="/monsters">
+      <div class="card-hd">
+        <h2>Monsters</h2>
+        <span class="badge b-dim">Reference</span>
+      </div>
+      <div class="card-bd">
+        <p>
+          Every monster from the source tables, with a threat filter that answers the
+          question you have on the stairs: what can actually spawn on me here?
+        </p>
+        <p>
+          Enter experience level and depth and it runs the game's own
+          <code>rndmonst()</code> rule &mdash; real generation weights, real
+          probabilities. Filter by class, resistance, or attack type.
+        </p>
+        <span class="go">Open reference &rarr;</span>
+      </div>
+    </a>
+
+    <a class="card card-glow tool" href="/dungeon">
+      <div class="card-hd">
+        <h2>Dungeon Map</h2>
+        <span class="badge b-dim">Reference</span>
+      </div>
+      <div class="card-bd">
+        <p>
+          Every branch on one vertical map. The Dungeons of Doom form the spine; the
+          Mines, Sokoban, the Quest, Ludios, Gehennom, Vlad's and the Planes hang off it
+          at exactly the levels their entrances can generate on.
+        </p>
+        <p>
+          Click any dungeon, branch or special level for its ranges, entry rules and flags.
+        </p>
+        <span class="go">Open map &rarr;</span>
       </div>
     </a>
 

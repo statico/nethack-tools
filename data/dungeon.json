@@ -1,0 +1,3584 @@
+{
+  "generated": "2026-08-02",
+  "version_order": [
+    "3.6",
+    "3.7",
+    "5.0"
+  ],
+  "versions": {
+    "3.6": {
+      "id": "3.6",
+      "label": "NetHack 3.6",
+      "source_file": "dat/dungeon.def",
+      "source_format": "bespoke format, compiled by util/dgn_comp",
+      "commit": "23d331ac64d7351d27e77ed4b95f7cdab19a3d21",
+      "dungeons": [
+        {
+          "name": "The Dungeons of Doom",
+          "bonetag": "D",
+          "base": 25,
+          "range": 5,
+          "alignment": "unaligned",
+          "flags": [],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "rogue",
+              "bonetag": "R",
+              "base": 15,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [
+                "roguelike"
+              ],
+              "display": "Rogue Level",
+              "page": "Rogue level",
+              "rows": [
+                15,
+                18
+              ],
+              "anchor": "top",
+              "placement": "levels 15–18",
+              "is_entry": false
+            },
+            {
+              "name": "oracle",
+              "bonetag": "O",
+              "base": 5,
+              "range": 5,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": "neutral",
+              "flags": [],
+              "display": "Oracle",
+              "page": "Oracle",
+              "rows": [
+                5,
+                9
+              ],
+              "anchor": "top",
+              "placement": "levels 5–9",
+              "is_entry": false
+            },
+            {
+              "name": "bigrm",
+              "bonetag": "B",
+              "base": 10,
+              "range": 3,
+              "chainlevel": null,
+              "nlevels": 10,
+              "chance": 40,
+              "alignment": null,
+              "flags": [],
+              "display": "Big Room",
+              "page": "Big Room",
+              "rows": [
+                10,
+                12
+              ],
+              "anchor": "top",
+              "placement": "levels 10–12",
+              "is_entry": false
+            },
+            {
+              "name": "medusa",
+              "bonetag": null,
+              "base": -5,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 4,
+              "chance": 100,
+              "alignment": "chaotic",
+              "flags": [],
+              "display": "Medusa's Island",
+              "page": "Medusa's Island",
+              "rows": [
+                21,
+                24
+              ],
+              "anchor": "bottom",
+              "placement": "levels N−4 to N−1",
+              "is_entry": false
+            },
+            {
+              "name": "castle",
+              "bonetag": null,
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "The Castle",
+              "page": "Castle",
+              "rows": [
+                25,
+                25
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            }
+          ],
+          "branches": [
+            {
+              "name": "The Gnomish Mines",
+              "base": 2,
+              "range": 3,
+              "chainlevel": null,
+              "branchtype": "stair",
+              "direction": "down",
+              "rows": [
+                2,
+                4
+              ],
+              "anchor": "top",
+              "placement": "levels 2–4",
+              "from": "The Dungeons of Doom",
+              "display": "The Gnomish Mines",
+              "type_note": "Two-way staircase."
+            },
+            {
+              "name": "Sokoban",
+              "base": 1,
+              "range": 0,
+              "chainlevel": "oracle",
+              "branchtype": "stair",
+              "direction": "up",
+              "rows": [
+                6,
+                10
+              ],
+              "anchor": "chain",
+              "placement": "1 level below the Oracle",
+              "from": "The Dungeons of Doom",
+              "display": "Sokoban",
+              "type_note": "Two-way staircase."
+            },
+            {
+              "name": "The Quest",
+              "base": 6,
+              "range": 2,
+              "chainlevel": "oracle",
+              "branchtype": "portal",
+              "direction": "down",
+              "rows": [
+                11,
+                16
+              ],
+              "anchor": "chain",
+              "placement": "6–7 levels below the Oracle",
+              "from": "The Dungeons of Doom",
+              "display": "The Quest",
+              "type_note": "Magic portal; both ends sit at the same depth."
+            },
+            {
+              "name": "Fort Ludios",
+              "base": 18,
+              "range": 4,
+              "chainlevel": null,
+              "branchtype": "portal",
+              "direction": "down",
+              "rows": [
+                18,
+                21
+              ],
+              "anchor": "top",
+              "placement": "levels 18–21",
+              "from": "The Dungeons of Doom",
+              "display": "Fort Ludios",
+              "type_note": "Magic portal; both ends sit at the same depth."
+            },
+            {
+              "name": "Gehennom",
+              "base": 0,
+              "range": 0,
+              "chainlevel": "castle",
+              "branchtype": "no_down",
+              "direction": "down",
+              "rows": [
+                25,
+                25
+              ],
+              "anchor": "chain",
+              "placement": "on the Castle level",
+              "from": "The Dungeons of Doom",
+              "display": "Gehennom",
+              "type_note": "One-way: no down staircase on this connection."
+            },
+            {
+              "name": "The Elemental Planes",
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "branchtype": "no_down",
+              "direction": "up",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "from": "The Dungeons of Doom",
+              "display": "The Elemental Planes",
+              "type_note": "One-way: no down staircase on this connection."
+            }
+          ],
+          "nominal_levels": 25,
+          "max_levels": 29,
+          "size_text": "25–29",
+          "display": "The Dungeons of Doom",
+          "page": "Dungeons of Doom",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": []
+        },
+        {
+          "name": "Gehennom",
+          "bonetag": "G",
+          "base": 20,
+          "range": 5,
+          "alignment": "noalign",
+          "flags": [
+            "mazelike",
+            "hellish"
+          ],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "valley",
+              "bonetag": "V",
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Valley of the Dead",
+              "page": "Valley of the Dead",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": true
+            },
+            {
+              "name": "sanctum",
+              "bonetag": null,
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "The Sanctum",
+              "page": "Moloch's Sanctum",
+              "rows": [
+                20,
+                20
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            },
+            {
+              "name": "juiblex",
+              "bonetag": "J",
+              "base": 4,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Juiblex's Swamp",
+              "page": "Juiblex's swamp",
+              "rows": [
+                4,
+                7
+              ],
+              "anchor": "top",
+              "placement": "levels 4–7",
+              "is_entry": false
+            },
+            {
+              "name": "baalz",
+              "bonetag": "B",
+              "base": 6,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Baalzebub's Lair",
+              "page": "Baalzebub's Lair",
+              "rows": [
+                6,
+                9
+              ],
+              "anchor": "top",
+              "placement": "levels 6–9",
+              "is_entry": false
+            },
+            {
+              "name": "asmodeus",
+              "bonetag": "A",
+              "base": 2,
+              "range": 6,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Asmodeus' Lair",
+              "page": "Asmodeus' Lair",
+              "rows": [
+                2,
+                7
+              ],
+              "anchor": "top",
+              "placement": "levels 2–7",
+              "is_entry": false
+            },
+            {
+              "name": "wizard1",
+              "bonetag": null,
+              "base": 11,
+              "range": 6,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Wizard's Tower 1",
+              "page": "Wizard's Tower",
+              "rows": [
+                11,
+                16
+              ],
+              "anchor": "top",
+              "placement": "levels 11–16",
+              "is_entry": false
+            },
+            {
+              "name": "wizard2",
+              "bonetag": "X",
+              "base": 1,
+              "range": 0,
+              "chainlevel": "wizard1",
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Wizard's Tower 2",
+              "page": "Wizard's Tower",
+              "rows": [
+                12,
+                17
+              ],
+              "anchor": "chain",
+              "placement": "1 level below the Wizard's Tower 1",
+              "is_entry": false
+            },
+            {
+              "name": "wizard3",
+              "bonetag": "Y",
+              "base": 2,
+              "range": 0,
+              "chainlevel": "wizard1",
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Wizard's Tower 3",
+              "page": "Wizard's Tower",
+              "rows": [
+                13,
+                18
+              ],
+              "anchor": "chain",
+              "placement": "2 levels below the Wizard's Tower 1",
+              "is_entry": false
+            },
+            {
+              "name": "orcus",
+              "bonetag": "O",
+              "base": 10,
+              "range": 6,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Orcus Town",
+              "page": "Orcus-town",
+              "rows": [
+                10,
+                15
+              ],
+              "anchor": "top",
+              "placement": "levels 10–15",
+              "is_entry": false
+            },
+            {
+              "name": "fakewiz1",
+              "bonetag": "F",
+              "base": -6,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Fake Wizard's Tower 1",
+              "page": "Fake Wizard's Tower",
+              "rows": [
+                15,
+                18
+              ],
+              "anchor": "bottom",
+              "placement": "levels N−5 to N−2",
+              "is_entry": false
+            },
+            {
+              "name": "fakewiz2",
+              "bonetag": "G",
+              "base": -6,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Fake Wizard's Tower 2",
+              "page": "Fake Wizard's Tower",
+              "rows": [
+                15,
+                18
+              ],
+              "anchor": "bottom",
+              "placement": "levels N−5 to N−2",
+              "is_entry": false
+            }
+          ],
+          "branches": [
+            {
+              "name": "Vlad's Tower",
+              "base": 9,
+              "range": 5,
+              "chainlevel": null,
+              "branchtype": "stair",
+              "direction": "up",
+              "rows": [
+                9,
+                13
+              ],
+              "anchor": "top",
+              "placement": "levels 9–13",
+              "from": "Gehennom",
+              "display": "Vlad's Tower",
+              "type_note": "Two-way staircase."
+            }
+          ],
+          "nominal_levels": 20,
+          "max_levels": 24,
+          "size_text": "20–24",
+          "display": "Gehennom",
+          "page": "Gehennom",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "on the Castle level",
+              "direction": "down",
+              "branchtype": "no_down",
+              "rows": [
+                25,
+                25
+              ]
+            }
+          ]
+        },
+        {
+          "name": "The Gnomish Mines",
+          "bonetag": "M",
+          "base": 8,
+          "range": 2,
+          "alignment": "lawful",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "minetn",
+              "bonetag": "T",
+              "base": 3,
+              "range": 2,
+              "chainlevel": null,
+              "nlevels": 7,
+              "chance": 100,
+              "alignment": null,
+              "flags": [
+                "town"
+              ],
+              "display": "Mine Town",
+              "page": "Minetown",
+              "rows": [
+                3,
+                4
+              ],
+              "anchor": "top",
+              "placement": "levels 3–4",
+              "is_entry": false
+            },
+            {
+              "name": "minend",
+              "bonetag": "E",
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 3,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Mine's End",
+              "page": "Mines' End",
+              "rows": [
+                8,
+                8
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 8,
+          "max_levels": 9,
+          "size_text": "8–9",
+          "display": "The Gnomish Mines",
+          "page": "Gnomish Mines",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "levels 2–4",
+              "direction": "down",
+              "branchtype": "stair",
+              "rows": [
+                2,
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "The Quest",
+          "bonetag": "Q",
+          "base": 5,
+          "range": 2,
+          "alignment": null,
+          "flags": [],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "x-strt",
+              "bonetag": null,
+              "base": 1,
+              "range": 1,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Quest home level",
+              "page": "Quest",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": true
+            },
+            {
+              "name": "x-loca",
+              "bonetag": "L",
+              "base": 3,
+              "range": 1,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Quest locate level",
+              "page": "Quest",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": false
+            },
+            {
+              "name": "x-goal",
+              "bonetag": null,
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Quest goal level",
+              "page": "Quest",
+              "rows": [
+                5,
+                5
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 5,
+          "max_levels": 6,
+          "size_text": "5–6",
+          "display": "The Quest",
+          "page": "Quest",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "6–7 levels below the Oracle",
+              "direction": "down",
+              "branchtype": "portal",
+              "rows": [
+                11,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Sokoban",
+          "bonetag": null,
+          "base": 4,
+          "range": 0,
+          "alignment": "neutral",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": -1,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "soko1",
+              "bonetag": null,
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 1",
+              "page": "Sokoban",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": false
+            },
+            {
+              "name": "soko2",
+              "bonetag": null,
+              "base": 2,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 2",
+              "page": "Sokoban",
+              "rows": [
+                2,
+                2
+              ],
+              "anchor": "top",
+              "placement": "level 2",
+              "is_entry": false
+            },
+            {
+              "name": "soko3",
+              "bonetag": null,
+              "base": 3,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 3",
+              "page": "Sokoban",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": false
+            },
+            {
+              "name": "soko4",
+              "bonetag": null,
+              "base": 4,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 4",
+              "page": "Sokoban",
+              "rows": [
+                4,
+                4
+              ],
+              "anchor": "top",
+              "placement": "level 4",
+              "is_entry": true
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 4,
+          "max_levels": 4,
+          "size_text": "4",
+          "display": "Sokoban",
+          "page": "Sokoban",
+          "entry_level": 4,
+          "entry_text": "the bottom level (entry = -1)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "1 level below the Oracle",
+              "direction": "up",
+              "branchtype": "stair",
+              "rows": [
+                6,
+                10
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Fort Ludios",
+          "bonetag": "K",
+          "base": 1,
+          "range": 0,
+          "alignment": "unaligned",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "knox",
+              "bonetag": "K",
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Fort Ludios",
+              "page": "Fort Ludios",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": true
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 1,
+          "max_levels": 1,
+          "size_text": "1",
+          "display": "Fort Ludios",
+          "page": "Fort Ludios",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "levels 18–21",
+              "direction": "down",
+              "branchtype": "portal",
+              "rows": [
+                18,
+                21
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Vlad's Tower",
+          "bonetag": "T",
+          "base": 3,
+          "range": 0,
+          "alignment": "chaotic",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": -1,
+          "protofile": "tower",
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "tower1",
+              "bonetag": null,
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Vlad's Tower 1",
+              "page": "Vlad's Tower",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": false
+            },
+            {
+              "name": "tower2",
+              "bonetag": null,
+              "base": 2,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Vlad's Tower 2",
+              "page": "Vlad's Tower",
+              "rows": [
+                2,
+                2
+              ],
+              "anchor": "top",
+              "placement": "level 2",
+              "is_entry": false
+            },
+            {
+              "name": "tower3",
+              "bonetag": null,
+              "base": 3,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Vlad's Tower 3",
+              "page": "Vlad's Tower",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": true
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 3,
+          "max_levels": 3,
+          "size_text": "3",
+          "display": "Vlad's Tower",
+          "page": "Vlad's Tower",
+          "entry_level": 3,
+          "entry_text": "the bottom level (entry = -1)",
+          "entered_by": [
+            {
+              "from": "Gehennom",
+              "from_display": "Gehennom",
+              "placement": "levels 9–13",
+              "direction": "up",
+              "branchtype": "stair",
+              "rows": [
+                9,
+                13
+              ]
+            }
+          ]
+        },
+        {
+          "name": "The Elemental Planes",
+          "bonetag": "E",
+          "base": 6,
+          "range": 0,
+          "alignment": "unaligned",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": -2,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "astral",
+              "bonetag": null,
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Astral Plane",
+              "page": "Astral Plane",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": false
+            },
+            {
+              "name": "water",
+              "bonetag": null,
+              "base": 2,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Water",
+              "page": "Plane of Water",
+              "rows": [
+                2,
+                2
+              ],
+              "anchor": "top",
+              "placement": "level 2",
+              "is_entry": false
+            },
+            {
+              "name": "fire",
+              "bonetag": null,
+              "base": 3,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Fire",
+              "page": "Plane of Fire",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": false
+            },
+            {
+              "name": "air",
+              "bonetag": null,
+              "base": 4,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Air",
+              "page": "Plane of Air",
+              "rows": [
+                4,
+                4
+              ],
+              "anchor": "top",
+              "placement": "level 4",
+              "is_entry": false
+            },
+            {
+              "name": "earth",
+              "bonetag": null,
+              "base": 5,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Earth",
+              "page": "Plane of Earth",
+              "rows": [
+                5,
+                5
+              ],
+              "anchor": "top",
+              "placement": "level 5",
+              "is_entry": true
+            },
+            {
+              "name": "dummy",
+              "bonetag": null,
+              "base": 6,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "dummy (surface placeholder)",
+              "rows": [
+                6,
+                6
+              ],
+              "anchor": "top",
+              "placement": "level 6",
+              "is_entry": false
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 6,
+          "max_levels": 6,
+          "size_text": "6",
+          "display": "The Elemental Planes",
+          "page": "Elemental Planes",
+          "entry_level": 5,
+          "entry_text": "the 2nd level from the bottom (entry = -2)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "level 1",
+              "direction": "up",
+              "branchtype": "no_down",
+              "rows": [
+                1,
+                1
+              ]
+            }
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "dungeon": "Gehennom",
+          "source": "src/dungeon.c",
+          "title": "The invocation level",
+          "text": "Invocation_lev() returns true for the Gehennom level numbered num_dunlevs - 1, i.e. the level immediately above the Sanctum. The dungeon file does not name it."
+        },
+        {
+          "dungeon": "The Elemental Planes",
+          "source": "a comment in the dungeon file itself",
+          "title": "Why entry is -2",
+          "text": "The file's own comment: \"Enter on 2nd level from bottom; 1st (from bottom) is a placeholder for surface level, and should be unreachable.\""
+        },
+        {
+          "dungeon": "Sokoban",
+          "source": "the dungeon file, read together with the Sokoban Helper",
+          "title": "Two different numberings",
+          "text": "The dungeon file numbers Sokoban top-down: soko1 is dungeon level 1, soko4 is level 4. Because entry = -1 you arrive on level 4 and climb, so the wiki (and this site's Sokoban Helper) call soko4 \"floor 1\" and soko1 \"floor 4\". The rows below are the file's numbering."
+        }
+      ]
+    },
+    "3.7": {
+      "id": "3.7",
+      "label": "NetHack 3.7",
+      "source_file": "dat/dungeon.lua",
+      "source_format": "Lua table, read at runtime by src/dungeon.c",
+      "commit": "b63ec1faa7ed7589c5d3f2dc19c154ab6e13f800",
+      "dungeons": [
+        {
+          "name": "The Dungeons of Doom",
+          "bonetag": "D",
+          "base": 25,
+          "range": 5,
+          "alignment": "unaligned",
+          "flags": [],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": "themerms.lua",
+          "levels": [
+            {
+              "name": "rogue",
+              "bonetag": "R",
+              "base": 15,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [
+                "roguelike"
+              ],
+              "display": "Rogue Level",
+              "page": "Rogue level",
+              "rows": [
+                15,
+                18
+              ],
+              "anchor": "top",
+              "placement": "levels 15–18",
+              "is_entry": false
+            },
+            {
+              "name": "oracle",
+              "bonetag": "O",
+              "base": 5,
+              "range": 5,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": "neutral",
+              "flags": [],
+              "display": "Oracle",
+              "page": "Oracle",
+              "rows": [
+                5,
+                9
+              ],
+              "anchor": "top",
+              "placement": "levels 5–9",
+              "is_entry": false
+            },
+            {
+              "name": "bigrm",
+              "bonetag": "B",
+              "base": 10,
+              "range": 3,
+              "chainlevel": null,
+              "nlevels": 13,
+              "chance": 40,
+              "alignment": null,
+              "flags": [],
+              "display": "Big Room",
+              "page": "Big Room",
+              "rows": [
+                10,
+                12
+              ],
+              "anchor": "top",
+              "placement": "levels 10–12",
+              "is_entry": false
+            },
+            {
+              "name": "medusa",
+              "bonetag": null,
+              "base": -5,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 4,
+              "chance": 100,
+              "alignment": "chaotic",
+              "flags": [],
+              "display": "Medusa's Island",
+              "page": "Medusa's Island",
+              "rows": [
+                21,
+                24
+              ],
+              "anchor": "bottom",
+              "placement": "levels N−4 to N−1",
+              "is_entry": false
+            },
+            {
+              "name": "castle",
+              "bonetag": null,
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "The Castle",
+              "page": "Castle",
+              "rows": [
+                25,
+                25
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            }
+          ],
+          "branches": [
+            {
+              "name": "The Gnomish Mines",
+              "base": 2,
+              "range": 3,
+              "chainlevel": null,
+              "branchtype": "stair",
+              "direction": "down",
+              "rows": [
+                2,
+                4
+              ],
+              "anchor": "top",
+              "placement": "levels 2–4",
+              "from": "The Dungeons of Doom",
+              "display": "The Gnomish Mines",
+              "type_note": "Two-way staircase."
+            },
+            {
+              "name": "Sokoban",
+              "base": 1,
+              "range": 0,
+              "chainlevel": "oracle",
+              "branchtype": "stair",
+              "direction": "up",
+              "rows": [
+                6,
+                10
+              ],
+              "anchor": "chain",
+              "placement": "1 level below the Oracle",
+              "from": "The Dungeons of Doom",
+              "display": "Sokoban",
+              "type_note": "Two-way staircase."
+            },
+            {
+              "name": "The Quest",
+              "base": 6,
+              "range": 2,
+              "chainlevel": "oracle",
+              "branchtype": "portal",
+              "direction": "down",
+              "rows": [
+                11,
+                16
+              ],
+              "anchor": "chain",
+              "placement": "6–7 levels below the Oracle",
+              "from": "The Dungeons of Doom",
+              "display": "The Quest",
+              "type_note": "Magic portal; both ends sit at the same depth."
+            },
+            {
+              "name": "Fort Ludios",
+              "base": 18,
+              "range": 4,
+              "chainlevel": null,
+              "branchtype": "portal",
+              "direction": "down",
+              "rows": [
+                18,
+                21
+              ],
+              "anchor": "top",
+              "placement": "levels 18–21",
+              "from": "The Dungeons of Doom",
+              "display": "Fort Ludios",
+              "type_note": "Magic portal; both ends sit at the same depth."
+            },
+            {
+              "name": "Gehennom",
+              "base": 0,
+              "range": 0,
+              "chainlevel": "castle",
+              "branchtype": "no_down",
+              "direction": "down",
+              "rows": [
+                25,
+                25
+              ],
+              "anchor": "chain",
+              "placement": "on the Castle level",
+              "from": "The Dungeons of Doom",
+              "display": "Gehennom",
+              "type_note": "One-way: no down staircase on this connection."
+            },
+            {
+              "name": "The Elemental Planes",
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "branchtype": "no_down",
+              "direction": "up",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "from": "The Dungeons of Doom",
+              "display": "The Elemental Planes",
+              "type_note": "One-way: no down staircase on this connection."
+            }
+          ],
+          "nominal_levels": 25,
+          "max_levels": 29,
+          "size_text": "25–29",
+          "display": "The Dungeons of Doom",
+          "page": "Dungeons of Doom",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": []
+        },
+        {
+          "name": "Gehennom",
+          "bonetag": "G",
+          "base": 20,
+          "range": 5,
+          "alignment": "noalign",
+          "flags": [
+            "mazelike",
+            "hellish"
+          ],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": "hellfill",
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "valley",
+              "bonetag": "V",
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Valley of the Dead",
+              "page": "Valley of the Dead",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": true
+            },
+            {
+              "name": "sanctum",
+              "bonetag": null,
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "The Sanctum",
+              "page": "Moloch's Sanctum",
+              "rows": [
+                20,
+                20
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            },
+            {
+              "name": "juiblex",
+              "bonetag": "J",
+              "base": 4,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Juiblex's Swamp",
+              "page": "Juiblex's swamp",
+              "rows": [
+                4,
+                7
+              ],
+              "anchor": "top",
+              "placement": "levels 4–7",
+              "is_entry": false
+            },
+            {
+              "name": "baalz",
+              "bonetag": "B",
+              "base": 6,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Baalzebub's Lair",
+              "page": "Baalzebub's Lair",
+              "rows": [
+                6,
+                9
+              ],
+              "anchor": "top",
+              "placement": "levels 6–9",
+              "is_entry": false
+            },
+            {
+              "name": "asmodeus",
+              "bonetag": "A",
+              "base": 2,
+              "range": 6,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Asmodeus' Lair",
+              "page": "Asmodeus' Lair",
+              "rows": [
+                2,
+                7
+              ],
+              "anchor": "top",
+              "placement": "levels 2–7",
+              "is_entry": false
+            },
+            {
+              "name": "wizard1",
+              "bonetag": null,
+              "base": 11,
+              "range": 6,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Wizard's Tower 1",
+              "page": "Wizard's Tower",
+              "rows": [
+                11,
+                16
+              ],
+              "anchor": "top",
+              "placement": "levels 11–16",
+              "is_entry": false
+            },
+            {
+              "name": "wizard2",
+              "bonetag": "X",
+              "base": 1,
+              "range": 0,
+              "chainlevel": "wizard1",
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Wizard's Tower 2",
+              "page": "Wizard's Tower",
+              "rows": [
+                12,
+                17
+              ],
+              "anchor": "chain",
+              "placement": "1 level below the Wizard's Tower 1",
+              "is_entry": false
+            },
+            {
+              "name": "wizard3",
+              "bonetag": "Y",
+              "base": 2,
+              "range": 0,
+              "chainlevel": "wizard1",
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Wizard's Tower 3",
+              "page": "Wizard's Tower",
+              "rows": [
+                13,
+                18
+              ],
+              "anchor": "chain",
+              "placement": "2 levels below the Wizard's Tower 1",
+              "is_entry": false
+            },
+            {
+              "name": "orcus",
+              "bonetag": "O",
+              "base": 10,
+              "range": 6,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Orcus Town",
+              "page": "Orcus-town",
+              "rows": [
+                10,
+                15
+              ],
+              "anchor": "top",
+              "placement": "levels 10–15",
+              "is_entry": false
+            },
+            {
+              "name": "fakewiz1",
+              "bonetag": "F",
+              "base": -6,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Fake Wizard's Tower 1",
+              "page": "Fake Wizard's Tower",
+              "rows": [
+                15,
+                18
+              ],
+              "anchor": "bottom",
+              "placement": "levels N−5 to N−2",
+              "is_entry": false
+            },
+            {
+              "name": "fakewiz2",
+              "bonetag": "G",
+              "base": -6,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Fake Wizard's Tower 2",
+              "page": "Fake Wizard's Tower",
+              "rows": [
+                15,
+                18
+              ],
+              "anchor": "bottom",
+              "placement": "levels N−5 to N−2",
+              "is_entry": false
+            }
+          ],
+          "branches": [
+            {
+              "name": "Vlad's Tower",
+              "base": 9,
+              "range": 5,
+              "chainlevel": null,
+              "branchtype": "stair",
+              "direction": "up",
+              "rows": [
+                9,
+                13
+              ],
+              "anchor": "top",
+              "placement": "levels 9–13",
+              "from": "Gehennom",
+              "display": "Vlad's Tower",
+              "type_note": "Two-way staircase."
+            }
+          ],
+          "nominal_levels": 20,
+          "max_levels": 24,
+          "size_text": "20–24",
+          "display": "Gehennom",
+          "page": "Gehennom",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "on the Castle level",
+              "direction": "down",
+              "branchtype": "no_down",
+              "rows": [
+                25,
+                25
+              ]
+            }
+          ]
+        },
+        {
+          "name": "The Gnomish Mines",
+          "bonetag": "M",
+          "base": 8,
+          "range": 2,
+          "alignment": "lawful",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": "minefill",
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "minetn",
+              "bonetag": "T",
+              "base": 3,
+              "range": 2,
+              "chainlevel": null,
+              "nlevels": 7,
+              "chance": 100,
+              "alignment": null,
+              "flags": [
+                "town"
+              ],
+              "display": "Mine Town",
+              "page": "Minetown",
+              "rows": [
+                3,
+                4
+              ],
+              "anchor": "top",
+              "placement": "levels 3–4",
+              "is_entry": false
+            },
+            {
+              "name": "minend",
+              "bonetag": null,
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 3,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Mine's End",
+              "page": "Mines' End",
+              "rows": [
+                8,
+                8
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 8,
+          "max_levels": 9,
+          "size_text": "8–9",
+          "display": "The Gnomish Mines",
+          "page": "Gnomish Mines",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "levels 2–4",
+              "direction": "down",
+              "branchtype": "stair",
+              "rows": [
+                2,
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "The Quest",
+          "bonetag": "Q",
+          "base": 5,
+          "range": 2,
+          "alignment": null,
+          "flags": [],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "x-strt",
+              "bonetag": null,
+              "base": 1,
+              "range": 1,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Quest home level",
+              "page": "Quest",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": true
+            },
+            {
+              "name": "x-loca",
+              "bonetag": "L",
+              "base": 3,
+              "range": 1,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Quest locate level",
+              "page": "Quest",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": false
+            },
+            {
+              "name": "x-goal",
+              "bonetag": null,
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Quest goal level",
+              "page": "Quest",
+              "rows": [
+                5,
+                5
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 5,
+          "max_levels": 6,
+          "size_text": "5–6",
+          "display": "The Quest",
+          "page": "Quest",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "6–7 levels below the Oracle",
+              "direction": "down",
+              "branchtype": "portal",
+              "rows": [
+                11,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Sokoban",
+          "bonetag": null,
+          "base": 4,
+          "range": 0,
+          "alignment": "neutral",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": -1,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "soko1",
+              "bonetag": null,
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 1",
+              "page": "Sokoban",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": false
+            },
+            {
+              "name": "soko2",
+              "bonetag": null,
+              "base": 2,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 2",
+              "page": "Sokoban",
+              "rows": [
+                2,
+                2
+              ],
+              "anchor": "top",
+              "placement": "level 2",
+              "is_entry": false
+            },
+            {
+              "name": "soko3",
+              "bonetag": null,
+              "base": 3,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 3",
+              "page": "Sokoban",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": false
+            },
+            {
+              "name": "soko4",
+              "bonetag": null,
+              "base": 4,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 4",
+              "page": "Sokoban",
+              "rows": [
+                4,
+                4
+              ],
+              "anchor": "top",
+              "placement": "level 4",
+              "is_entry": true
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 4,
+          "max_levels": 4,
+          "size_text": "4",
+          "display": "Sokoban",
+          "page": "Sokoban",
+          "entry_level": 4,
+          "entry_text": "the bottom level (entry = -1)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "1 level below the Oracle",
+              "direction": "up",
+              "branchtype": "stair",
+              "rows": [
+                6,
+                10
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Fort Ludios",
+          "bonetag": "K",
+          "base": 1,
+          "range": 0,
+          "alignment": "unaligned",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "knox",
+              "bonetag": "K",
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Fort Ludios",
+              "page": "Fort Ludios",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": true
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 1,
+          "max_levels": 1,
+          "size_text": "1",
+          "display": "Fort Ludios",
+          "page": "Fort Ludios",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "levels 18–21",
+              "direction": "down",
+              "branchtype": "portal",
+              "rows": [
+                18,
+                21
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Vlad's Tower",
+          "bonetag": "T",
+          "base": 3,
+          "range": 0,
+          "alignment": "chaotic",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": -1,
+          "protofile": "tower",
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "tower1",
+              "bonetag": null,
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Vlad's Tower 1",
+              "page": "Vlad's Tower",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": false
+            },
+            {
+              "name": "tower2",
+              "bonetag": null,
+              "base": 2,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Vlad's Tower 2",
+              "page": "Vlad's Tower",
+              "rows": [
+                2,
+                2
+              ],
+              "anchor": "top",
+              "placement": "level 2",
+              "is_entry": false
+            },
+            {
+              "name": "tower3",
+              "bonetag": null,
+              "base": 3,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Vlad's Tower 3",
+              "page": "Vlad's Tower",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": true
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 3,
+          "max_levels": 3,
+          "size_text": "3",
+          "display": "Vlad's Tower",
+          "page": "Vlad's Tower",
+          "entry_level": 3,
+          "entry_text": "the bottom level (entry = -1)",
+          "entered_by": [
+            {
+              "from": "Gehennom",
+              "from_display": "Gehennom",
+              "placement": "levels 9–13",
+              "direction": "up",
+              "branchtype": "stair",
+              "rows": [
+                9,
+                13
+              ]
+            }
+          ]
+        },
+        {
+          "name": "The Elemental Planes",
+          "bonetag": "E",
+          "base": 6,
+          "range": 0,
+          "alignment": "unaligned",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": -2,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "astral",
+              "bonetag": null,
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Astral Plane",
+              "page": "Astral Plane",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": false
+            },
+            {
+              "name": "water",
+              "bonetag": null,
+              "base": 2,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Water",
+              "page": "Plane of Water",
+              "rows": [
+                2,
+                2
+              ],
+              "anchor": "top",
+              "placement": "level 2",
+              "is_entry": false
+            },
+            {
+              "name": "fire",
+              "bonetag": null,
+              "base": 3,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Fire",
+              "page": "Plane of Fire",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": false
+            },
+            {
+              "name": "air",
+              "bonetag": null,
+              "base": 4,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Air",
+              "page": "Plane of Air",
+              "rows": [
+                4,
+                4
+              ],
+              "anchor": "top",
+              "placement": "level 4",
+              "is_entry": false
+            },
+            {
+              "name": "earth",
+              "bonetag": null,
+              "base": 5,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Earth",
+              "page": "Plane of Earth",
+              "rows": [
+                5,
+                5
+              ],
+              "anchor": "top",
+              "placement": "level 5",
+              "is_entry": true
+            },
+            {
+              "name": "dummy",
+              "bonetag": null,
+              "base": 6,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "dummy (surface placeholder)",
+              "rows": [
+                6,
+                6
+              ],
+              "anchor": "top",
+              "placement": "level 6",
+              "is_entry": false
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 6,
+          "max_levels": 6,
+          "size_text": "6",
+          "display": "The Elemental Planes",
+          "page": "Elemental Planes",
+          "entry_level": 5,
+          "entry_text": "the 2nd level from the bottom (entry = -2)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "level 1",
+              "direction": "up",
+              "branchtype": "no_down",
+              "rows": [
+                1,
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "name": "The Tutorial",
+          "bonetag": null,
+          "base": 2,
+          "range": 0,
+          "alignment": null,
+          "flags": [
+            "mazelike",
+            "unconnected"
+          ],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "tut-1",
+              "bonetag": null,
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Tutorial level 1",
+              "page": "Tutorial",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": true
+            },
+            {
+              "name": "tut-2",
+              "bonetag": null,
+              "base": 2,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Tutorial level 2",
+              "page": "Tutorial",
+              "rows": [
+                2,
+                2
+              ],
+              "anchor": "top",
+              "placement": "level 2",
+              "is_entry": false
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 2,
+          "max_levels": 2,
+          "size_text": "2",
+          "display": "The Tutorial",
+          "page": "Tutorial",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": []
+        }
+      ],
+      "notes": [
+        {
+          "dungeon": "Gehennom",
+          "source": "src/dungeon.c",
+          "title": "The invocation level",
+          "text": "Invocation_lev() returns true for the Gehennom level numbered num_dunlevs - 1, i.e. the level immediately above the Sanctum. The dungeon file does not name it."
+        },
+        {
+          "dungeon": "The Elemental Planes",
+          "source": "a comment in the dungeon file itself",
+          "title": "Why entry is -2",
+          "text": "The file's own comment: \"Enter on 2nd level from bottom; 1st (from bottom) is a placeholder for surface level, and should be unreachable.\""
+        },
+        {
+          "dungeon": "Sokoban",
+          "source": "the dungeon file, read together with the Sokoban Helper",
+          "title": "Two different numberings",
+          "text": "The dungeon file numbers Sokoban top-down: soko1 is dungeon level 1, soko4 is level 4. Because entry = -1 you arrive on level 4 and climb, so the wiki (and this site's Sokoban Helper) call soko4 \"floor 1\" and soko1 \"floor 4\". The rows below are the file's numbering."
+        }
+      ]
+    },
+    "5.0": {
+      "id": "5.0",
+      "label": "NetHack 5.0",
+      "source_file": "dat/dungeon.lua",
+      "source_format": "Lua table, read at runtime by src/dungeon.c",
+      "commit": "a8a13bed810de3e1c55efeb8b16463844aa280c9",
+      "dungeons": [
+        {
+          "name": "The Dungeons of Doom",
+          "bonetag": "D",
+          "base": 25,
+          "range": 5,
+          "alignment": "unaligned",
+          "flags": [],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": "themerms.lua",
+          "levels": [
+            {
+              "name": "rogue",
+              "bonetag": "R",
+              "base": 15,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [
+                "roguelike"
+              ],
+              "display": "Rogue Level",
+              "page": "Rogue level",
+              "rows": [
+                15,
+                18
+              ],
+              "anchor": "top",
+              "placement": "levels 15–18",
+              "is_entry": false
+            },
+            {
+              "name": "oracle",
+              "bonetag": "O",
+              "base": 5,
+              "range": 5,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": "neutral",
+              "flags": [],
+              "display": "Oracle",
+              "page": "Oracle",
+              "rows": [
+                5,
+                9
+              ],
+              "anchor": "top",
+              "placement": "levels 5–9",
+              "is_entry": false
+            },
+            {
+              "name": "bigrm",
+              "bonetag": "B",
+              "base": 10,
+              "range": 3,
+              "chainlevel": null,
+              "nlevels": 13,
+              "chance": 40,
+              "alignment": null,
+              "flags": [],
+              "display": "Big Room",
+              "page": "Big Room",
+              "rows": [
+                10,
+                12
+              ],
+              "anchor": "top",
+              "placement": "levels 10–12",
+              "is_entry": false
+            },
+            {
+              "name": "medusa",
+              "bonetag": null,
+              "base": -5,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 4,
+              "chance": 100,
+              "alignment": "chaotic",
+              "flags": [],
+              "display": "Medusa's Island",
+              "page": "Medusa's Island",
+              "rows": [
+                21,
+                24
+              ],
+              "anchor": "bottom",
+              "placement": "levels N−4 to N−1",
+              "is_entry": false
+            },
+            {
+              "name": "castle",
+              "bonetag": null,
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "The Castle",
+              "page": "Castle",
+              "rows": [
+                25,
+                25
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            }
+          ],
+          "branches": [
+            {
+              "name": "The Gnomish Mines",
+              "base": 2,
+              "range": 3,
+              "chainlevel": null,
+              "branchtype": "stair",
+              "direction": "down",
+              "rows": [
+                2,
+                4
+              ],
+              "anchor": "top",
+              "placement": "levels 2–4",
+              "from": "The Dungeons of Doom",
+              "display": "The Gnomish Mines",
+              "type_note": "Two-way staircase."
+            },
+            {
+              "name": "Sokoban",
+              "base": 1,
+              "range": 0,
+              "chainlevel": "oracle",
+              "branchtype": "stair",
+              "direction": "up",
+              "rows": [
+                6,
+                10
+              ],
+              "anchor": "chain",
+              "placement": "1 level below the Oracle",
+              "from": "The Dungeons of Doom",
+              "display": "Sokoban",
+              "type_note": "Two-way staircase."
+            },
+            {
+              "name": "The Quest",
+              "base": 6,
+              "range": 2,
+              "chainlevel": "oracle",
+              "branchtype": "portal",
+              "direction": "down",
+              "rows": [
+                11,
+                16
+              ],
+              "anchor": "chain",
+              "placement": "6–7 levels below the Oracle",
+              "from": "The Dungeons of Doom",
+              "display": "The Quest",
+              "type_note": "Magic portal; both ends sit at the same depth."
+            },
+            {
+              "name": "Fort Ludios",
+              "base": 18,
+              "range": 4,
+              "chainlevel": null,
+              "branchtype": "portal",
+              "direction": "down",
+              "rows": [
+                18,
+                21
+              ],
+              "anchor": "top",
+              "placement": "levels 18–21",
+              "from": "The Dungeons of Doom",
+              "display": "Fort Ludios",
+              "type_note": "Magic portal; both ends sit at the same depth."
+            },
+            {
+              "name": "Gehennom",
+              "base": 0,
+              "range": 0,
+              "chainlevel": "castle",
+              "branchtype": "no_down",
+              "direction": "down",
+              "rows": [
+                25,
+                25
+              ],
+              "anchor": "chain",
+              "placement": "on the Castle level",
+              "from": "The Dungeons of Doom",
+              "display": "Gehennom",
+              "type_note": "One-way: no down staircase on this connection."
+            },
+            {
+              "name": "The Elemental Planes",
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "branchtype": "no_down",
+              "direction": "up",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "from": "The Dungeons of Doom",
+              "display": "The Elemental Planes",
+              "type_note": "One-way: no down staircase on this connection."
+            }
+          ],
+          "nominal_levels": 25,
+          "max_levels": 29,
+          "size_text": "25–29",
+          "display": "The Dungeons of Doom",
+          "page": "Dungeons of Doom",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": []
+        },
+        {
+          "name": "Gehennom",
+          "bonetag": "G",
+          "base": 20,
+          "range": 5,
+          "alignment": "noalign",
+          "flags": [
+            "mazelike",
+            "hellish"
+          ],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": "hellfill",
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "valley",
+              "bonetag": "V",
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Valley of the Dead",
+              "page": "Valley of the Dead",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": true
+            },
+            {
+              "name": "sanctum",
+              "bonetag": null,
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "The Sanctum",
+              "page": "Moloch's Sanctum",
+              "rows": [
+                20,
+                20
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            },
+            {
+              "name": "juiblex",
+              "bonetag": "J",
+              "base": 4,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Juiblex's Swamp",
+              "page": "Juiblex's swamp",
+              "rows": [
+                4,
+                7
+              ],
+              "anchor": "top",
+              "placement": "levels 4–7",
+              "is_entry": false
+            },
+            {
+              "name": "baalz",
+              "bonetag": "B",
+              "base": 6,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Baalzebub's Lair",
+              "page": "Baalzebub's Lair",
+              "rows": [
+                6,
+                9
+              ],
+              "anchor": "top",
+              "placement": "levels 6–9",
+              "is_entry": false
+            },
+            {
+              "name": "asmodeus",
+              "bonetag": "A",
+              "base": 2,
+              "range": 6,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Asmodeus' Lair",
+              "page": "Asmodeus' Lair",
+              "rows": [
+                2,
+                7
+              ],
+              "anchor": "top",
+              "placement": "levels 2–7",
+              "is_entry": false
+            },
+            {
+              "name": "wizard1",
+              "bonetag": null,
+              "base": 11,
+              "range": 6,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Wizard's Tower 1",
+              "page": "Wizard's Tower",
+              "rows": [
+                11,
+                16
+              ],
+              "anchor": "top",
+              "placement": "levels 11–16",
+              "is_entry": false
+            },
+            {
+              "name": "wizard2",
+              "bonetag": "X",
+              "base": 1,
+              "range": 0,
+              "chainlevel": "wizard1",
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Wizard's Tower 2",
+              "page": "Wizard's Tower",
+              "rows": [
+                12,
+                17
+              ],
+              "anchor": "chain",
+              "placement": "1 level below the Wizard's Tower 1",
+              "is_entry": false
+            },
+            {
+              "name": "wizard3",
+              "bonetag": "Y",
+              "base": 2,
+              "range": 0,
+              "chainlevel": "wizard1",
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Wizard's Tower 3",
+              "page": "Wizard's Tower",
+              "rows": [
+                13,
+                18
+              ],
+              "anchor": "chain",
+              "placement": "2 levels below the Wizard's Tower 1",
+              "is_entry": false
+            },
+            {
+              "name": "orcus",
+              "bonetag": "O",
+              "base": 10,
+              "range": 6,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Orcus Town",
+              "page": "Orcus-town",
+              "rows": [
+                10,
+                15
+              ],
+              "anchor": "top",
+              "placement": "levels 10–15",
+              "is_entry": false
+            },
+            {
+              "name": "fakewiz1",
+              "bonetag": "F",
+              "base": -6,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Fake Wizard's Tower 1",
+              "page": "Fake Wizard's Tower",
+              "rows": [
+                15,
+                18
+              ],
+              "anchor": "bottom",
+              "placement": "levels N−5 to N−2",
+              "is_entry": false
+            },
+            {
+              "name": "fakewiz2",
+              "bonetag": "G",
+              "base": -6,
+              "range": 4,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Fake Wizard's Tower 2",
+              "page": "Fake Wizard's Tower",
+              "rows": [
+                15,
+                18
+              ],
+              "anchor": "bottom",
+              "placement": "levels N−5 to N−2",
+              "is_entry": false
+            }
+          ],
+          "branches": [
+            {
+              "name": "Vlad's Tower",
+              "base": 9,
+              "range": 5,
+              "chainlevel": null,
+              "branchtype": "stair",
+              "direction": "up",
+              "rows": [
+                9,
+                13
+              ],
+              "anchor": "top",
+              "placement": "levels 9–13",
+              "from": "Gehennom",
+              "display": "Vlad's Tower",
+              "type_note": "Two-way staircase."
+            }
+          ],
+          "nominal_levels": 20,
+          "max_levels": 24,
+          "size_text": "20–24",
+          "display": "Gehennom",
+          "page": "Gehennom",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "on the Castle level",
+              "direction": "down",
+              "branchtype": "no_down",
+              "rows": [
+                25,
+                25
+              ]
+            }
+          ]
+        },
+        {
+          "name": "The Gnomish Mines",
+          "bonetag": "M",
+          "base": 8,
+          "range": 2,
+          "alignment": "lawful",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": "minefill",
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "minetn",
+              "bonetag": "T",
+              "base": 3,
+              "range": 2,
+              "chainlevel": null,
+              "nlevels": 7,
+              "chance": 100,
+              "alignment": null,
+              "flags": [
+                "town"
+              ],
+              "display": "Mine Town",
+              "page": "Minetown",
+              "rows": [
+                3,
+                4
+              ],
+              "anchor": "top",
+              "placement": "levels 3–4",
+              "is_entry": false
+            },
+            {
+              "name": "minend",
+              "bonetag": null,
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 3,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Mine's End",
+              "page": "Mines' End",
+              "rows": [
+                8,
+                8
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 8,
+          "max_levels": 9,
+          "size_text": "8–9",
+          "display": "The Gnomish Mines",
+          "page": "Gnomish Mines",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "levels 2–4",
+              "direction": "down",
+              "branchtype": "stair",
+              "rows": [
+                2,
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "The Quest",
+          "bonetag": "Q",
+          "base": 5,
+          "range": 2,
+          "alignment": null,
+          "flags": [],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "x-strt",
+              "bonetag": null,
+              "base": 1,
+              "range": 1,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Quest home level",
+              "page": "Quest",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": true
+            },
+            {
+              "name": "x-loca",
+              "bonetag": "L",
+              "base": 3,
+              "range": 1,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Quest locate level",
+              "page": "Quest",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": false
+            },
+            {
+              "name": "x-goal",
+              "bonetag": null,
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Quest goal level",
+              "page": "Quest",
+              "rows": [
+                5,
+                5
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": false
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 5,
+          "max_levels": 6,
+          "size_text": "5–6",
+          "display": "The Quest",
+          "page": "Quest",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "6–7 levels below the Oracle",
+              "direction": "down",
+              "branchtype": "portal",
+              "rows": [
+                11,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Sokoban",
+          "bonetag": null,
+          "base": 4,
+          "range": 0,
+          "alignment": "neutral",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": -1,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "soko1",
+              "bonetag": null,
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 1",
+              "page": "Sokoban",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": false
+            },
+            {
+              "name": "soko2",
+              "bonetag": null,
+              "base": 2,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 2",
+              "page": "Sokoban",
+              "rows": [
+                2,
+                2
+              ],
+              "anchor": "top",
+              "placement": "level 2",
+              "is_entry": false
+            },
+            {
+              "name": "soko3",
+              "bonetag": null,
+              "base": 3,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 3",
+              "page": "Sokoban",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": false
+            },
+            {
+              "name": "soko4",
+              "bonetag": null,
+              "base": 4,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 2,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Sokoban level 4",
+              "page": "Sokoban",
+              "rows": [
+                4,
+                4
+              ],
+              "anchor": "top",
+              "placement": "level 4",
+              "is_entry": true
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 4,
+          "max_levels": 4,
+          "size_text": "4",
+          "display": "Sokoban",
+          "page": "Sokoban",
+          "entry_level": 4,
+          "entry_text": "the bottom level (entry = -1)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "1 level below the Oracle",
+              "direction": "up",
+              "branchtype": "stair",
+              "rows": [
+                6,
+                10
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Fort Ludios",
+          "bonetag": "K",
+          "base": 1,
+          "range": 0,
+          "alignment": "unaligned",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "knox",
+              "bonetag": "K",
+              "base": -1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Fort Ludios",
+              "page": "Fort Ludios",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "bottom",
+              "placement": "the bottom level (N)",
+              "is_entry": true
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 1,
+          "max_levels": 1,
+          "size_text": "1",
+          "display": "Fort Ludios",
+          "page": "Fort Ludios",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "levels 18–21",
+              "direction": "down",
+              "branchtype": "portal",
+              "rows": [
+                18,
+                21
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Vlad's Tower",
+          "bonetag": "T",
+          "base": 3,
+          "range": 0,
+          "alignment": "chaotic",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": -1,
+          "protofile": "tower",
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "tower1",
+              "bonetag": null,
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Vlad's Tower 1",
+              "page": "Vlad's Tower",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": false
+            },
+            {
+              "name": "tower2",
+              "bonetag": null,
+              "base": 2,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Vlad's Tower 2",
+              "page": "Vlad's Tower",
+              "rows": [
+                2,
+                2
+              ],
+              "anchor": "top",
+              "placement": "level 2",
+              "is_entry": false
+            },
+            {
+              "name": "tower3",
+              "bonetag": null,
+              "base": 3,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Vlad's Tower 3",
+              "page": "Vlad's Tower",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": true
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 3,
+          "max_levels": 3,
+          "size_text": "3",
+          "display": "Vlad's Tower",
+          "page": "Vlad's Tower",
+          "entry_level": 3,
+          "entry_text": "the bottom level (entry = -1)",
+          "entered_by": [
+            {
+              "from": "Gehennom",
+              "from_display": "Gehennom",
+              "placement": "levels 9–13",
+              "direction": "up",
+              "branchtype": "stair",
+              "rows": [
+                9,
+                13
+              ]
+            }
+          ]
+        },
+        {
+          "name": "The Elemental Planes",
+          "bonetag": "E",
+          "base": 6,
+          "range": 0,
+          "alignment": "unaligned",
+          "flags": [
+            "mazelike"
+          ],
+          "entry": -2,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "astral",
+              "bonetag": null,
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Astral Plane",
+              "page": "Astral Plane",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": false
+            },
+            {
+              "name": "water",
+              "bonetag": null,
+              "base": 2,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Water",
+              "page": "Plane of Water",
+              "rows": [
+                2,
+                2
+              ],
+              "anchor": "top",
+              "placement": "level 2",
+              "is_entry": false
+            },
+            {
+              "name": "fire",
+              "bonetag": null,
+              "base": 3,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Fire",
+              "page": "Plane of Fire",
+              "rows": [
+                3,
+                3
+              ],
+              "anchor": "top",
+              "placement": "level 3",
+              "is_entry": false
+            },
+            {
+              "name": "air",
+              "bonetag": null,
+              "base": 4,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Air",
+              "page": "Plane of Air",
+              "rows": [
+                4,
+                4
+              ],
+              "anchor": "top",
+              "placement": "level 4",
+              "is_entry": false
+            },
+            {
+              "name": "earth",
+              "bonetag": null,
+              "base": 5,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Plane of Earth",
+              "page": "Plane of Earth",
+              "rows": [
+                5,
+                5
+              ],
+              "anchor": "top",
+              "placement": "level 5",
+              "is_entry": true
+            },
+            {
+              "name": "dummy",
+              "bonetag": null,
+              "base": 6,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "dummy (surface placeholder)",
+              "rows": [
+                6,
+                6
+              ],
+              "anchor": "top",
+              "placement": "level 6",
+              "is_entry": false
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 6,
+          "max_levels": 6,
+          "size_text": "6",
+          "display": "The Elemental Planes",
+          "page": "Elemental Planes",
+          "entry_level": 5,
+          "entry_text": "the 2nd level from the bottom (entry = -2)",
+          "entered_by": [
+            {
+              "from": "The Dungeons of Doom",
+              "from_display": "The Dungeons of Doom",
+              "placement": "level 1",
+              "direction": "up",
+              "branchtype": "no_down",
+              "rows": [
+                1,
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "name": "The Tutorial",
+          "bonetag": null,
+          "base": 2,
+          "range": 0,
+          "alignment": null,
+          "flags": [
+            "mazelike",
+            "unconnected"
+          ],
+          "entry": 0,
+          "protofile": null,
+          "lvlfill": null,
+          "themerooms": null,
+          "levels": [
+            {
+              "name": "tut-1",
+              "bonetag": null,
+              "base": 1,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Tutorial level 1",
+              "page": "Tutorial",
+              "rows": [
+                1,
+                1
+              ],
+              "anchor": "top",
+              "placement": "level 1",
+              "is_entry": true
+            },
+            {
+              "name": "tut-2",
+              "bonetag": null,
+              "base": 2,
+              "range": 0,
+              "chainlevel": null,
+              "nlevels": 0,
+              "chance": 100,
+              "alignment": null,
+              "flags": [],
+              "display": "Tutorial level 2",
+              "page": "Tutorial",
+              "rows": [
+                2,
+                2
+              ],
+              "anchor": "top",
+              "placement": "level 2",
+              "is_entry": false
+            }
+          ],
+          "branches": [],
+          "nominal_levels": 2,
+          "max_levels": 2,
+          "size_text": "2",
+          "display": "The Tutorial",
+          "page": "Tutorial",
+          "entry_level": 1,
+          "entry_text": "the top level (entry defaults to the top)",
+          "entered_by": []
+        }
+      ],
+      "notes": [
+        {
+          "dungeon": "Gehennom",
+          "source": "src/dungeon.c",
+          "title": "The invocation level",
+          "text": "Invocation_lev() returns true for the Gehennom level numbered num_dunlevs - 1, i.e. the level immediately above the Sanctum. The dungeon file does not name it."
+        },
+        {
+          "dungeon": "The Elemental Planes",
+          "source": "a comment in the dungeon file itself",
+          "title": "Why entry is -2",
+          "text": "The file's own comment: \"Enter on 2nd level from bottom; 1st (from bottom) is a placeholder for surface level, and should be unreachable.\""
+        },
+        {
+          "dungeon": "Sokoban",
+          "source": "the dungeon file, read together with the Sokoban Helper",
+          "title": "Two different numberings",
+          "text": "The dungeon file numbers Sokoban top-down: soko1 is dungeon level 1, soko4 is level 4. Because entry = -1 you arrive on level 4 and climb, so the wiki (and this site's Sokoban Helper) call soko4 \"floor 1\" and soko1 \"floor 4\". The rows below are the file's numbering."
+        }
+      ]
+    }
+  },
+  "diffs": {
+    "3.6->3.7": [
+      {
+        "kind": "added",
+        "path": "The Tutorial",
+        "detail": "dungeon added in 3.7"
+      },
+      {
+        "kind": "changed",
+        "path": "Gehennom | lvlfill",
+        "from": null,
+        "to": "hellfill"
+      },
+      {
+        "kind": "changed",
+        "path": "The Dungeons of Doom | level bigrm | nlevels",
+        "from": 10,
+        "to": 13
+      },
+      {
+        "kind": "changed",
+        "path": "The Dungeons of Doom | themerooms",
+        "from": null,
+        "to": "themerms.lua"
+      },
+      {
+        "kind": "changed",
+        "path": "The Gnomish Mines | level minend | bonetag",
+        "from": "E",
+        "to": null
+      },
+      {
+        "kind": "changed",
+        "path": "The Gnomish Mines | lvlfill",
+        "from": null,
+        "to": "minefill"
+      }
+    ],
+    "3.7->5.0": []
+  }
+}

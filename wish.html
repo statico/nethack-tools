@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wish Generator &amp; Validator — statico's NetHack Tools</title>
+<meta name="description" content="Build a NetHack wish string and see exactly which parts the game honors, clamps or silently drops. Every rule read out of readobjnam() and mksobj(), for NetHack 3.6, 3.7 and 5.0.">
+<link rel="canonical" href="https://nethack.statico.io/wish">
+<meta property="og:title" content="Wish Generator &amp; Validator — statico&#39;s NetHack Tools">
+<meta property="og:description" content="Build a NetHack wish and see which parts the game honors, clamps or drops — enchantment caps, charge limits, artifact failure odds — derived from readobjnam().">
+<meta property="og:url" content="https://nethack.statico.io/wish"><meta property="og:type" content="website">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/smui.css">
+<style>
+  /* Page-local only. Colors come from smui.css custom properties. */
+  .wishline {
+    font-size: 20px; font-weight: 600; color: hsl(var(--frost-2));
+    background: hsl(var(--surface-0));
+    border: 1px solid hsl(var(--line));
+    padding: calc(var(--step) * 3) calc(var(--step) * 3.5);
+    overflow-x: auto; white-space: nowrap; line-height: 1.4;
+  }
+  .wishline .w-name { color: hsl(var(--text-0)); }
+  .wishline .w-spe { color: hsl(var(--green)); }
+  .wishline .w-count { color: hsl(var(--yellow)); }
+  .wishline .empty-hint { color: hsl(var(--text-2)); font-weight: 400; font-size: 13px; }
+  .checks { display: flex; flex-direction: column; gap: calc(var(--step) * 2); }
+  .check { display: flex; align-items: center; gap: calc(var(--step) * 2); font-size: 12px; cursor: pointer; }
+  .check.off { color: hsl(var(--text-2)); cursor: not-allowed; }
+  .f-row { display: grid; grid-template-columns: 120px 1fr; gap: calc(var(--step) * 3); align-items: start; }
+  @media (max-width: 620px) { .f-row { grid-template-columns: 1fr; gap: calc(var(--step) * 1); } }
+  .f-list > * + * { margin-top: calc(var(--step) * 3.5); padding-top: calc(var(--step) * 3.5); border-top: 1px solid hsl(var(--line) / 0.5); }
+  .f-body { font-size: 12px; color: hsl(var(--text-1)); }
+  .f-cite { font-size: 10px; color: hsl(var(--text-2)); letter-spacing: 0.5px; margin-top: calc(var(--step) * 1.5); }
+  .f-meter { display: flex; align-items: center; gap: calc(var(--step) * 2); margin-top: calc(var(--step) * 2); max-width: 320px; }
+  .f-meter .pct { font-size: 11px; color: hsl(var(--text-1)); min-width: 46px; text-align: right; }
+  .sel-wide { max-width: 100%; }
+  .fields { display: grid; gap: calc(var(--step) * 4); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  /* .field is a column flex, so a bare .seg child would stretch to fill it;
+     the scroll wrapper keeps it hugging its buttons and scrollable when narrow */
+  .seg-scroll .seg { max-width: none; }
+  .field-wide { grid-column: 1 / -1; }
+  .seg-scroll { overflow-x: auto; max-width: 100%; align-self: flex-start; }
+  .diff td:first-child { color: hsl(var(--text-0)); }
+  .arti-note { font-size: 11px; color: hsl(var(--text-2)); }
+</style>
+</head><body>
+<div id="nav"></div>
+
+<main class="wrap page stack">
+
+  <header class="stack">
+    <div class="row">
+      <h1>Wish generator &amp; validator</h1>
+      <span class="badge b-frost">3.6 · 3.7 · 5.0</span>
+    </div>
+    <p class="mid" style="max-width:74ch">
+      Build a wish, get the string to paste into the prompt — and, more usefully, find out
+      which parts of it the game is actually going to honor. Enchantment above +2 is a dice
+      roll, charge counts are capped at whatever <code>mksobj()</code> happened to roll,
+      several adjectives are quietly discarded when your Luck is negative, and a few objects
+      are swapped out from under you before they are even created. Every rule here was read
+      out of <code>readobjnam()</code> in <code>src/objnam.c</code> and
+      <code>mksobj()</code> in <code>src/mkobj.c</code>, and each one cites its line.
+    </p>
+  </header>
+
+  <!-- ===================== context ===================== -->
+  <section class="card">
+    <div class="card-hd"><span class="label">Game state</span></div>
+    <div class="card-bd fields">
+      <div class="field">
+        <span class="label">Version</span>
+        <div class="seg-scroll">
+          <div class="seg" id="ver" role="group" aria-label="NetHack version">
+            <button class="btn" data-ver="3.6" aria-pressed="false">NetHack 3.6</button>
+            <button class="btn" data-ver="3.7-5.0" aria-pressed="true">NetHack 3.7 / 5.0</button>
+          </div>
+        </div>
+        <span class="small dim">3.7 and 5.0 parse wishes identically — the generator
+          diffs <code>readobjnam()</code> between the two branches on every run and fails
+          if they ever diverge.</span>
+      </div>
+
+      <div class="field">
+        <span class="label">Luck</span>
+        <div class="seg-scroll">
+          <div class="seg" id="luck" role="group" aria-label="Luck">
+            <button class="btn" data-luck="0" aria-pressed="true">Luck &ge; 0</button>
+            <button class="btn" data-luck="1" aria-pressed="false">Luck &lt; 0</button>
+          </div>
+        </div>
+        <span class="small dim">Negative Luck turns "blessed" into cursed, drops
+          erodeproof and poison, and flips any surviving enchantment above +2.</span>
+      </div>
+
+      <div class="field">
+        <label class="label" for="narti">Artifacts already in existence</label>
+        <input type="number" id="narti" min="1" max="34" step="1" value="1">
+        <span class="small dim">Counting the one you are about to wish for. Only matters
+          for artifact wishes. If you have not seen any yet, leave it at 1.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== builder ===================== -->
+  <section class="card">
+    <div class="card-hd"><span class="label">Build the wish</span></div>
+    <div class="card-bd stack">
+      <div class="fields">
+        <div class="field">
+          <label class="label" for="cls">Object class</label>
+          <select id="cls" class="sel-wide"></select>
+        </div>
+        <div class="field">
+          <label class="label" for="obj">Object</label>
+          <select id="obj" class="sel-wide"></select>
+        </div>
+        <div class="field">
+          <label class="label" for="arti">Artifact</label>
+          <select id="arti" class="sel-wide"></select>
+          <span class="arti-note">Picking an artifact replaces the object above: the base
+            item comes from <code>artilist[]</code>.</span>
+        </div>
+      </div>
+
+      <hr>
+
+      <div class="fields">
+        <div class="field field-wide">
+          <span class="label">Beatitude</span>
+          <div class="seg-scroll">
+            <div class="seg" id="bcu" role="group" aria-label="Beatitude">
+              <button class="btn" data-bcu="" aria-pressed="true">unsaid</button>
+              <button class="btn" data-bcu="blessed" aria-pressed="false">blessed</button>
+              <button class="btn" data-bcu="uncursed" aria-pressed="false">uncursed</button>
+              <button class="btn" data-bcu="cursed" aria-pressed="false">cursed</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="spe"><span id="spe-label">Enchantment</span></label>
+          <input type="number" id="spe" min="-999" max="999" step="1"
+                 placeholder="leave blank — do not say">
+          <span class="small dim" id="spe-hint">Blank means "do not say", which leaves the
+            randomly rolled value alone.</span>
+        </div>
+
+        <div class="field">
+          <label class="label" for="quan">Quantity</label>
+          <input type="number" id="quan" min="1" max="9999" step="1"
+                 placeholder="1">
+          <span class="small dim">Only mergeable objects can stack.</span>
+        </div>
+
+        <div class="field">
+          <span class="label">Adjectives</span>
+          <div class="checks">
+            <label class="check" for="c-ero"><input type="checkbox" id="c-ero" checked><span>erodeproof / fixed</span></label>
+            <label class="check" for="c-gre"><input type="checkbox" id="c-gre"><span>greased</span></label>
+            <label class="check" for="c-poi"><input type="checkbox" id="c-poi"><span>poisoned</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== the wish ===================== -->
+  <section class="card card-glow">
+    <div class="card-hd">
+      <span class="label">Type this at the prompt</span>
+      <button class="btn" id="copy">Copy</button>
+    </div>
+    <div class="card-bd stack">
+      <div class="wishline" id="wishline"></div>
+      <p class="small dim" style="margin:0">
+        <code>readobjnam_preparse()</code> loops over the adjectives, so their order does not
+        matter to the parser — this is the order the game itself prints them in
+        <code>doname()</code>, which is the least surprising thing to type back.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== findings ===================== -->
+  <section id="findings" class="stack"></section>
+
+  <!-- ===================== differences ===================== -->
+  <section class="card">
+    <div class="card-hd"><span class="label">Where the versions disagree</span></div>
+    <div class="card-bd tbl-scroll">
+      <table class="tbl diff">
+        <thead><tr><th>Rule</th><th>NetHack 3.6</th><th>NetHack 3.7 / 5.0</th><th>Source</th></tr></thead>
+        <tbody id="diffs"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== caveats ===================== -->
+  <section class="card">
+    <div class="card-hd"><span class="label">What this does and does not cover</span></div>
+    <div class="card-bd stack">
+      <p style="margin:0">
+        This is a model of <code>readobjnam()</code>, not of the whole game. It tells you how
+        your wish string will be parsed and which requests survive. It does not tell you what
+        to wish for — for that, read
+        <a href="https://nethackwiki.com/wiki/Wish" class="wiki" target="_blank" rel="noopener">Wish</a>
+        on NetHackWiki.
+      </p>
+      <details>
+        <summary>Assumptions and known gaps</summary>
+        <div class="stack" style="gap:calc(var(--step)*2);font-size:12px;color:hsl(var(--text-1))">
+          <p style="margin:0"><strong>Wizard mode is not modelled.</strong> Every rule below is
+          the <code>!wizard</code> path. In debug mode the enchantment roll, the quantity test,
+          the artifact roll and the object substitutions are all skipped.</p>
+          <p style="margin:0"><strong>Experience level.</strong> The random enchantment
+          <code>mksobj()</code> rolls is <code>rne(3)</code>, whose cap is
+          <code>(u.ulevel &lt; 15) ? 5 : u.ulevel / 3</code>. All probabilities here use the
+          cap of 5. Above XL 17 that cap rises, so requests of +6 and higher stop being exactly
+          impossible and become merely absurd — of order one in ten thousand.</p>
+          <p style="margin:0"><strong>Default beatitude is not quantified.</strong> When you do
+          not say blessed, uncursed or cursed, the item keeps whatever <code>blessorcurse()</code>
+          rolled inside <code>mksobj()</code>. That chance varies by object class and by object,
+          and this tool does not enumerate it — it only tells you that the roll happened.</p>
+          <p style="margin:0"><strong>Not modelled at all:</strong> wizard-mode terrain and trap
+          wishes, glob sizes, fruit names, corpses and statues of specific monsters, tin
+          varieties, eroded and diluted items, box lock states, and the
+          <code>named</code> / <code>called</code> / <code>labeled</code> suffixes.
+          <code>readobjnam()</code> accepts all of them; this builder does not emit them.</p>
+          <p style="margin:0"><strong>Artifact counting.</strong> The failure roll uses
+          <code>nartifact_exist()</code>, which counts every artifact that has come into
+          existence — including ones generated on the floor, in a monster's inventory or in a
+          bones file, which you may never have seen. The number you type in is a guess, and so
+          is the answer.</p>
+        </div>
+      </details>
+      <p class="small dim" id="src-note" style="margin:0"></p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer wrap credits">
+  <dl>
+    <dt>Wish rules</dt>
+    <dd>
+      Read out of <code>readobjnam()</code> in <code>src/objnam.c</code>,
+      <code>mksobj()</code> in <code>src/mkobj.c</code>, <code>oname()</code> in
+      <code>src/do_name.c</code> and <code>src/artifact.c</code> of the
+      <a href="https://github.com/NetHack/NetHack" rel="noopener">NetHack source</a>
+      by the DevTeam, under the
+      <a href="https://www.nethack.org/common/license.html" rel="noopener">NetHack General Public License</a>.
+      Every rule is located by regular expression at generation time, so an upstream change
+      breaks the build rather than this page.
+    </dd>
+
+    <dt>Object tables</dt>
+    <dd>
+      Object names and classes from <code>include/objects.h</code> (3.7 / 5.0) and
+      <code>src/objects.c</code> (3.6); artifacts from <code>include/artilist.h</code>;
+      quest artifact assignments from <code>src/role.c</code>. Same source and license.
+    </dd>
+
+    <dt>Reference</dt>
+    <dd>
+      <a href="https://nethackwiki.com/wiki/Wish" class="wiki" target="_blank" rel="noopener">Wish</a>
+      and
+      <a href="https://nethackwiki.com/wiki/Artifact" class="wiki" target="_blank" rel="noopener">Artifact</a>
+      on <a href="https://nethackwiki.com/" rel="noopener">NetHackWiki</a>, licensed
+      <a href="https://creativecommons.org/licenses/by-sa/3.0/" rel="noopener">CC BY-SA 3.0</a> —
+      used to cross-check this implementation, which is derived from the source rather than
+      from the wiki's prose.
+    </dd>
+
+    <dt>Design</dt>
+    <dd>
+      Styled after <a href="https://smui.statico.io/" rel="noopener">SMUI</a>, using the
+      <a href="https://www.nordtheme.com/" rel="noopener">Nord</a> palette by Arctic Ice Studio
+      and <a href="https://www.jetbrains.com/lp/mono/" rel="noopener">JetBrains Mono</a>.
+    </dd>
+  </dl>
+
+  <div class="meta-bar">
+    <span>Built by statico &middot; <code>@statico</code> on Discord &middot; not affiliated with the NetHack DevTeam.</span>
+    <span class="links">
+      <a href="https://github.com/statico/nethack-tools" rel="noopener">Source on GitHub</a>
+    </span>
+  </div>
+</footer>
+
+<script src="/assets/nav.js"></script>
+<script src="/assets/wish-engine.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var E = window.WishEngine;
+
+  var CLASS_ORDER = ['weapon', 'armor', 'ring', 'amulet', 'tool', 'food', 'potion',
+    'scroll', 'spellbook', 'wand', 'gem', 'rock', 'other'];
+
+  var STATUS = {
+    honored: { badge: 'b-green', text: 'honored' },
+    chance:  { badge: 'b-yellow', text: 'a roll' },
+    clamped: { badge: 'b-orange', text: 'clamped' },
+    dropped: { badge: 'b-dim', text: 'dropped' },
+    blocked: { badge: 'b-red', text: 'blocked' },
+    note:    { badge: 'b-frost', text: 'note' }
+  };
+
+  var DATA = null;
+  var NAMES = {};   /* version -> class -> [names] */
+
+  var state = {
+    version: '3.7-5.0',
+    luckNeg: false,
+    nArtifacts: 1,
+    cls: 'weapon',
+    item: 'long sword',
+    artifact: null,
+    bcu: '',
+    spe: 3,
+    quantity: null,
+    erodeproof: true,
+    greased: false,
+    poisoned: false
+  };
+
+  /* ---------- helpers ---------- */
+
+  function el(id) { return document.getElementById(id); }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function V() { return DATA.versions[state.version]; }
+
+  function spec() {
+    return {
+      version: state.version,
+      item: state.item,
+      artifact: state.artifact,
+      bcu: state.bcu,
+      spe: state.spe == null ? 0 : state.spe,
+      speGiven: state.spe != null,
+      recharged: 0,
+      erodeproof: state.erodeproof,
+      greased: state.greased,
+      poisoned: state.poisoned,
+      quantity: state.quantity,
+      luckNeg: state.luckNeg,
+      nArtifacts: state.nArtifacts
+    };
+  }
+
+  function currentItem() {
+    return E.resolveItem(spec(), DATA);
+  }
+
+  function segSelect(container, attr, value) {
+    Array.prototype.forEach.call(container.querySelectorAll('button'), function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute(attr) === value));
+    });
+  }
+
+  /* ---------- render: pickers ---------- */
+
+  function buildNameIndex(key) {
+    if (NAMES[key]) return NAMES[key];
+    var objs = DATA.versions[key].objects;
+    var byClass = {};
+    Object.keys(objs).forEach(function (name) {
+      var c = objs[name].cls || 'other';
+      (byClass[c] = byClass[c] || []).push(name);
+    });
+    Object.keys(byClass).forEach(function (c) {
+      byClass[c].sort(function (a, b) { return a.localeCompare(b); });
+    });
+    NAMES[key] = byClass;
+    return byClass;
+  }
+
+  function renderPickers() {
+    var byClass = buildNameIndex(state.version);
+    var classes = CLASS_ORDER.filter(function (c) { return byClass[c]; });
+    if (classes.indexOf(state.cls) < 0) state.cls = classes[0];
+
+    el('cls').innerHTML = classes.map(function (c) {
+      return '<option value="' + esc(c) + '"' +
+        (c === state.cls ? ' selected' : '') + '>' + esc(c) +
+        ' (' + byClass[c].length + ')</option>';
+    }).join('');
+
+    var list = byClass[state.cls] || [];
+    if (list.indexOf(state.item) < 0) state.item = list[0] || null;
+    el('obj').innerHTML = list.map(function (n) {
+      return '<option value="' + esc(n) + '"' +
+        (n === state.item ? ' selected' : '') + '>' + esc(n) + '</option>';
+    }).join('');
+
+    var arts = V().artifacts;
+    if (!arts.some(function (a) { return a.name === state.artifact; })) {
+      state.artifact = null;
+    }
+    el('arti').innerHTML = '<option value="">— no artifact —</option>' +
+      arts.map(function (a) {
+        return '<option value="' + esc(a.name) + '"' +
+          (a.name === state.artifact ? ' selected' : '') + '>' +
+          esc(a.name) + ' (' + esc(a.base) + ')</option>';
+      }).join('');
+
+    el('obj').disabled = !!state.artifact;
+    el('cls').disabled = !!state.artifact;
+  }
+
+  function renderSpeLabel() {
+    var it = currentItem();
+    var charges = it && E.usesChargeSyntax(it);
+    el('spe-label').textContent = charges ? 'Charges' : 'Enchantment';
+    el('spe-hint').innerHTML = charges
+      ? 'Written as <code>(0:N)</code>, the form <code>doname()</code> prints. Blank leaves '
+        + 'the rolled charge count alone.'
+      : 'Blank means &quot;do not say&quot;, which leaves the randomly rolled value alone.';
+  }
+
+  /* ---------- render: the wish string ---------- */
+
+  function renderWish() {
+    var built = E.buildString(spec(), DATA);
+    if (!built.text) {
+      el('wishline').innerHTML = '<span class="empty-hint">Pick an object to build a wish.</span>';
+      return;
+    }
+    el('wishline').innerHTML = built.parts.map(function (p) {
+      var cls = p.kind === 'name' ? 'w-name'
+        : p.kind === 'spe' ? 'w-spe'
+          : p.kind === 'count' ? 'w-count' : '';
+      return '<span class="' + cls + '" title="' + esc(p.why) + '">' +
+        esc(p.text) + '</span>';
+    }).join(' ');
+  }
+
+  /* ---------- render: findings ---------- */
+
+  function renderFindings() {
+    var res = E.evaluate(spec(), DATA);
+    if (!res.findings.length) {
+      el('findings').innerHTML =
+        '<div class="card"><div class="empty">Pick an object or an artifact.</div></div>';
+      return;
+    }
+
+    var counts = { blocked: 0, dropped: 0, clamped: 0, chance: 0 };
+    res.findings.forEach(function (f) {
+      if (counts[f.status] !== undefined) counts[f.status]++;
+    });
+    var trouble = counts.blocked + counts.dropped + counts.clamped + counts.chance;
+
+    var rows = res.findings.map(function (f) {
+      var s = STATUS[f.status] || STATUS.note;
+      var meter = '';
+      if (typeof f.prob === 'number') {
+        var pct = Math.max(0, Math.min(100, f.prob * 100));
+        meter = '<div class="f-meter">' +
+          '<div class="meter"><span style="width:' + pct.toFixed(1) + '%"></span></div>' +
+          '<span class="pct">' + pct.toFixed(pct > 0 && pct < 1 ? 2 : 0) + '%</span>' +
+          '</div>';
+      }
+      var cite = f.cite
+        ? '<div class="f-cite">' + esc(f.cite.file) + ':' + f.cite.line +
+          ' — ' + esc(f.cite.what) + '</div>'
+        : '';
+      return '<div class="f-row">' +
+        '<div><span class="badge ' + s.badge + '">' + esc(s.text) + '</span>' +
+          '<div class="small dim" style="margin-top:calc(var(--step)*1.5)">' +
+            esc(f.label) + '</div></div>' +
+        '<div><div class="f-body">' + f.text + '</div>' + meter + cite + '</div>' +
+      '</div>';
+    }).join('');
+
+    el('findings').innerHTML =
+      '<div class="card card-glow">' +
+        '<div class="card-hd">' +
+          '<span class="label">What the game will do</span>' +
+          '<span class="small dim">' +
+            (trouble
+              ? trouble + ' of ' + res.findings.length + ' parts need watching'
+              : 'everything you asked for') +
+          '</span>' +
+        '</div>' +
+        '<div class="card-bd"><div class="f-list">' + rows + '</div></div>' +
+      '</div>';
+  }
+
+  /* ---------- render: version differences ---------- */
+
+  function renderDiffs() {
+    el('diffs').innerHTML = E.versionDiffs(DATA).map(function (d) {
+      return '<tr><td>' + esc(d.what) + '</td>' +
+        '<td class="mid">' + esc(d.v36) + '</td>' +
+        '<td class="mid">' + esc(d.v37) + '</td>' +
+        '<td class="dim small nowrap">' +
+          (d.cite ? esc(d.cite.file) + ':' + d.cite.line : '&mdash;') +
+        '</td></tr>';
+    }).join('');
+  }
+
+  function renderAll() {
+    renderPickers();
+    renderSpeLabel();
+    renderWish();
+    renderFindings();
+  }
+
+  /* ---------- events ---------- */
+
+  el('ver').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-ver]');
+    if (!b) return;
+    state.version = b.getAttribute('data-ver');
+    segSelect(this, 'data-ver', state.version);
+    renderAll();
+  });
+
+  el('luck').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-luck]');
+    if (!b) return;
+    state.luckNeg = b.getAttribute('data-luck') === '1';
+    segSelect(this, 'data-luck', b.getAttribute('data-luck'));
+    renderFindings();
+  });
+
+  el('bcu').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-bcu]');
+    if (!b) return;
+    state.bcu = b.getAttribute('data-bcu');
+    segSelect(this, 'data-bcu', state.bcu);
+    renderWish();
+    renderFindings();
+  });
+
+  el('narti').addEventListener('input', function () {
+    var v = parseInt(this.value, 10);
+    state.nArtifacts = isFinite(v) && v > 0 ? v : 1;
+    renderFindings();
+  });
+
+  el('cls').addEventListener('change', function () {
+    state.cls = this.value;
+    state.item = null;
+    renderAll();
+  });
+
+  el('obj').addEventListener('change', function () {
+    state.item = this.value;
+    renderSpeLabel();
+    renderWish();
+    renderFindings();
+  });
+
+  el('arti').addEventListener('change', function () {
+    state.artifact = this.value || null;
+    renderAll();
+  });
+
+  el('spe').addEventListener('input', function () {
+    var v = parseInt(this.value, 10);
+    state.spe = this.value === '' || !isFinite(v) ? null : v;
+    renderWish();
+    renderFindings();
+  });
+
+  el('quan').addEventListener('input', function () {
+    var v = parseInt(this.value, 10);
+    state.quantity = this.value === '' || !isFinite(v) || v < 1 ? null : v;
+    renderWish();
+    renderFindings();
+  });
+
+  [['c-ero', 'erodeproof'], ['c-gre', 'greased'], ['c-poi', 'poisoned']]
+    .forEach(function (pair) {
+      el(pair[0]).addEventListener('change', function () {
+        state[pair[1]] = this.checked;
+        renderWish();
+        renderFindings();
+      });
+    });
+
+  el('copy').addEventListener('click', function () {
+    var text = E.buildString(spec(), DATA).text;
+    if (!text) return;
+    var btn = this;
+    var done = function () {
+      btn.textContent = 'Copied';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1200);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () {});
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (err) { /* ignore */ }
+      document.body.removeChild(ta);
+    }
+  });
+
+  /* ---------- boot ---------- */
+
+  el('spe').value = state.spe == null ? '' : String(state.spe);
+
+  el('findings').innerHTML =
+    '<div class="card"><div class="empty">Loading the object and artifact tables…</div></div>';
+
+  Promise.all([
+    fetch('/data/wish.json').then(function (r) {
+      if (!r.ok) throw new Error('wish.json: HTTP ' + r.status);
+      return r.json();
+    }),
+    fetch('/data/objects.json').then(function (r) {
+      if (!r.ok) throw new Error('objects.json: HTTP ' + r.status);
+      return r.json();
+    })
+  ]).then(function (both) {
+    DATA = both[0];
+    var orphans = E.attachClasses(DATA, both[1]);
+    if (orphans.length) {
+      throw new Error('object tables disagree: ' + orphans.slice(0, 3).join(', '));
+    }
+    var g = DATA.generated_from || {};
+    el('src-note').textContent = 'Rules and tables generated ' + (g.generated || '?') +
+      ' from NetHack commit ' + String(g.repo_commit || '?').slice(0, 10) + '.';
+    renderDiffs();
+    renderAll();
+  }).catch(function (err) {
+    el('findings').innerHTML = '<div class="card"><div class="card-bd">' +
+      '<div class="note note-red">Could not load the wish data (' + esc(err.message) +
+      ').</div></div></div>';
+  });
+})();
+</script>
+</body></html>

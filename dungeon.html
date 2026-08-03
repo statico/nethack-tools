@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dungeon &amp; Branch Map — statico's NetHack Tools</title>
+<meta name="description" content="Every NetHack dungeon and branch drawn as a vertical map: level counts, where each branch entrance generates, and where every special level can land — parsed straight out of dungeon.def (3.6) and dungeon.lua (3.7 / 5.0).">
+<link rel="canonical" href="https://nethack.statico.io/dungeon">
+<meta property="og:title" content="Dungeon &amp; Branch Map — statico&#39;s NetHack Tools">
+<meta property="og:description" content="Vertical branch map of the NetHack dungeon: level ranges, branch entrances and special-level placement for 3.6, 3.7 and 5.0.">
+<meta property="og:url" content="https://nethack.statico.io/dungeon"><meta property="og:type" content="website">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/smui.css">
+<style>
+  /* Diagram ------------------------------------------------------------- */
+  .maps { display: grid; gap: calc(var(--step) * 6); grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 980px) {
+    /* Two balanced columns; a dungeon block must never be split across them. */
+    .maps { display: block; columns: 2; column-gap: calc(var(--step) * 8); }
+    .dgn { break-inside: avoid; margin-bottom: calc(var(--step) * 6); }
+  }
+
+  .dgn { --lw: 10px; }
+  @media (max-width: 560px) { .dgn { --lw: 7px; } }
+
+  .dgn-hd {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    gap: calc(var(--step) * 2) calc(var(--step) * 3);
+    padding-bottom: calc(var(--step) * 2);
+    border-bottom: 1px solid hsl(var(--line));
+    margin-bottom: calc(var(--step) * 2);
+  }
+  button.dgn-title {
+    font-family: var(--mono); font-size: 14px; font-weight: 600;
+    color: hsl(var(--text-0)); background: none; border: 0; padding: 0;
+    cursor: pointer; text-align: left;
+  }
+  button.dgn-title:hover { color: hsl(var(--frost-2)); }
+  button.dgn-title[aria-expanded='true'] { color: hsl(var(--frost-2)); }
+  button.dgn-title::before { content: '▸ '; color: hsl(var(--text-2)); }
+
+  .map {
+    display: grid;
+    grid-template-columns:
+      2.1rem 11px repeat(var(--lanes, 1), var(--lw)) minmax(0, 1fr);
+    grid-template-rows: repeat(var(--rows, 1), minmax(21px, auto));
+    align-items: start;
+  }
+
+  /* the dungeon's own vertical shaft */
+  .rail {
+    grid-column: 2; grid-row: 1 / -1;
+    border-left: 1px solid hsl(var(--line));
+    margin-left: 5px; height: 100%;
+  }
+  .rn {
+    grid-column: 1; font-size: 10px; color: hsl(var(--text-2));
+    text-align: right; padding-right: calc(var(--step) * 2);
+    font-style: normal; line-height: 21px;
+  }
+  .rn.is-last { color: hsl(var(--text-1)); }
+  .rn.is-last::after { content: '·N'; color: hsl(var(--yellow)); }
+
+  /* node on the shaft, with a horizontal run out to the chips */
+  .dot {
+    grid-column: 2; position: relative;
+    width: 7px; height: 7px; margin: 7px 0 0 2px;
+    background: currentColor;
+  }
+  .dot::after {
+    content: ''; position: absolute; left: 7px; top: 3px;
+    width: calc(var(--lanes, 1) * var(--lw) + 8px);
+    border-top: 1px solid hsl(var(--line));
+  }
+  .k-branch { color: hsl(var(--frost-2)); }
+  .k-level  { color: hsl(var(--purple)); }
+
+  /* bracket showing the span of rows an entrance / level can generate in */
+  .lane {
+    width: 0; margin: 3px 0 3px 3px; align-self: stretch;
+    border-left: 2px solid currentColor; position: relative; opacity: 0.6;
+  }
+  .lane::before, .lane::after {
+    content: ''; position: absolute; left: -2px; width: 5px;
+    border-top: 2px solid currentColor;
+  }
+  .lane::before { top: 0; }
+  .lane::after  { bottom: 0; }
+
+  .cell {
+    grid-column: -2; display: flex; flex-wrap: wrap;
+    gap: calc(var(--step) * 1.5); padding: 2px 0 2px calc(var(--step) * 2);
+    min-width: 0;
+  }
+
+  button.chip {
+    font-family: var(--mono); font-size: 11px; line-height: 1.45;
+    background: hsl(var(--surface-2));
+    border: 1px solid hsl(var(--line));
+    color: hsl(var(--text-0));
+    padding: 0 calc(var(--step) * 1.5);
+    cursor: pointer; text-align: left;
+    display: inline-flex; align-items: baseline; gap: calc(var(--step) * 1.5);
+    max-width: 100%; min-width: 0;
+  }
+  button.chip:hover { border-color: hsl(var(--frost-2)); }
+  button.chip[aria-expanded='true'] {
+    border-color: hsl(var(--frost-2));
+    background: hsl(var(--frost-2) / 0.16);
+  }
+  button.chip .ico { flex: 0 0 auto; font-weight: 700; }
+  /* break-word, not anywhere: `anywhere` also shrinks the min-content width,
+     which lets a narrow table column split "Oracle" into "Orac / le". */
+  button.chip .nm  { min-width: 0; overflow-wrap: break-word; }
+  button.chip .pl  { color: hsl(var(--text-2)); font-size: 10px; overflow-wrap: break-word; }
+  button.chip.is-branch .ico { color: hsl(var(--frost-2)); }
+  button.chip.is-level  .ico { color: hsl(var(--purple)); }
+  button.chip.is-entry  .ico { color: hsl(var(--green)); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 2) calc(var(--step) * 5); font-size: 11px; }
+  .legend b { font-weight: 700; margin-right: 4px; }
+
+  /* Detail --------------------------------------------------------------- */
+  #detail { scroll-margin-top: 58px; }
+  #detail:focus { outline: none; }
+  #detail:focus-visible { outline: 2px solid hsl(var(--frost-2)); outline-offset: 2px; }
+  .kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: calc(var(--step) * 1.5) calc(var(--step) * 4); font-size: 12px; }
+  .kv dt { color: hsl(var(--text-2)); font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; padding-top: 2px; white-space: nowrap; }
+  .kv dd { margin: 0; color: hsl(var(--text-1)); }
+  @media (max-width: 560px) {
+    .kv { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .kv dd { margin-bottom: calc(var(--step) * 2); }
+  }
+  .detail-cols { display: grid; gap: calc(var(--step) * 5); grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 900px) { .detail-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); } }
+
+  code.proto { color: hsl(var(--frost-3)); }
+  .diff-add td, .diff-add th { color: hsl(var(--green)); }
+  .diff-del td, .diff-del th { color: hsl(var(--red)); }
+</style>
+</head><body>
+<div id="nav"></div>
+
+<main class="wrap page stack">
+
+  <header class="stack">
+    <h1>Dungeon &amp; Branch Map</h1>
+    <p class="mid" style="max-width:80ch">
+      NetHack keeps its entire dungeon topology in one file: how deep every dungeon runs, which levels a
+      branch entrance may generate on, and where each named special level can land. This page parses that
+      file &mdash; <code>dat/dungeon.def</code> in 3.6, <code>dat/dungeon.lua</code> in 3.7 and 5.0 &mdash;
+      and draws it. Every number below comes out of the game data; nothing is remembered lore.
+    </p>
+  </header>
+
+  <section class="card">
+    <div class="card-hd">
+      <h2>Version</h2>
+      <span class="row" style="gap:calc(var(--step)*3)">
+        <span class="seg" id="verSeg" role="group" aria-label="NetHack version"></span>
+      </span>
+    </div>
+    <div class="card-bd stack">
+      <div class="row small dim" id="verMeta"></div>
+      <div class="note">
+        <b>How to read the depths.</b> Each dungeon&rsquo;s length is itself random, so the map is drawn at
+        the <b>minimum</b> depth of every dungeon. Levels pinned to the top (the Oracle, the Mines entrance)
+        keep their numbers whatever happens; levels pinned to the bottom (Medusa, the Castle, the Sanctum)
+        slide down as the dungeon gets longer, so those are labelled relative to <b>N</b>, the dungeon&rsquo;s
+        actual depth. A bracket spans every level an entrance or special level is allowed to appear on.
+      </div>
+      <div class="legend dim">
+        <span><b class="g-stair">&darr;</b> down staircase</span>
+        <span><b class="g-stair">&uarr;</b> up staircase</span>
+        <span><b class="g-door">&loz;</b> magic portal</span>
+        <span><b class="g-prize">&bull;</b> special level</span>
+        <span><b class="g-hero">&bull;</b> level you arrive on</span>
+        <span><b class="dim">&#9474;</b> range it can generate in</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="stack">
+    <div class="spread">
+      <h2>The map</h2>
+      <span class="label" id="mapCount"></span>
+    </div>
+    <div class="maps" id="maps">
+      <div class="empty">Loading dungeon data&hellip;</div>
+    </div>
+  </section>
+
+  <section class="card card-glow" id="detail" role="region" tabindex="-1" hidden></section>
+
+  <section class="card">
+    <div class="card-hd">
+      <h2>What changed between versions</h2>
+      <span class="badge b-dim">Diffed from the files</span>
+    </div>
+    <div class="card-bd stack" id="diffs"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-hd"><h2>Reading the raw fields</h2></div>
+    <div class="card-bd stack">
+      <p class="mid" style="margin:0">
+        Both file formats carry the same numbers; only the syntax changed. The rules below are from
+        <code>util/dgn_comp.y</code> (the 3.6 grammar) and <code>src/dungeon.c</code>
+        (<code>level_range()</code> and <code>init_dungeon_set_entry()</code>, 3.7 / 5.0) &mdash; they agree.
+      </p>
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><code>base</code>, <code>range</code> on a dungeon</td>
+                <td>The dungeon has <code>base</code> to <code>base + range - 1</code> levels
+                    (<code>rn1(range, base)</code>). <code>range</code> absent means exactly <code>base</code>.</td></tr>
+            <tr><td><code>base</code> &gt; 0 on a level or branch</td>
+                <td>An absolute level number counted from the top of that dungeon.</td></tr>
+            <tr><td><code>base</code> &lt; 0</td>
+                <td>A reverse index: the level is <code>N + base + 1</code>, so <code>-1</code> is the bottom level.</td></tr>
+            <tr><td><code>chainlevel</code></td>
+                <td><code>base</code> is added to wherever the named level actually landed, so the two move together.</td></tr>
+            <tr><td><code>range</code> on a level or branch</td>
+                <td><code>0</code> means one fixed choice; <code>n</code> means <code>n</code> consecutive candidate
+                    levels, clipped at the bottom of the dungeon; <code>-1</code> means &ldquo;anywhere from here
+                    down&rdquo;.</td></tr>
+            <tr><td><code>nlevels</code> (3.6: the trailing count on <code>RNDLEVEL</code>)</td>
+                <td>How many interchangeable map files exist for that level; one is picked per game.</td></tr>
+            <tr><td><code>chance</code></td>
+                <td>Percentage chance the level is created at all. Only the Big Room uses it (40%).</td></tr>
+            <tr><td><code>entry</code></td>
+                <td>Which level of the dungeon you arrive on. <code>0</code> / absent = the top,
+                    negative counts from the bottom, so Sokoban&rsquo;s <code>-1</code> means you enter at
+                    its bottom and climb.</td></tr>
+            <tr><td><code>branchtype</code></td>
+                <td><code>stair</code> (two-way), <code>portal</code> (a magic portal; both ends stay at the same
+                    depth), or <code>no_up</code> / <code>no_down</code> for a one-way connection missing one
+                    of its staircases.</td></tr>
+            <tr><td>flags</td>
+                <td><code>mazelike</code>, <code>hellish</code>, <code>town</code>, <code>roguelike</code>,
+                    <code>unconnected</code> &mdash; the five bits in <code>d_flags</code>
+                    (<code>include/dungeon.h</code>).</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small dim" style="margin:0">
+        The dungeon file says nothing about shops, temples, altars or monsters, so neither does this page.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer wrap credits">
+  <dl>
+    <dt>Dungeon data</dt>
+    <dd>
+      Parsed from <code>dat/dungeon.def</code> (NetHack 3.6) and <code>dat/dungeon.lua</code>
+      (NetHack 3.7 and 5.0) in the
+      <a href="https://github.com/NetHack/NetHack" rel="noopener">NetHack source</a>
+      by the DevTeam, under the
+      <a href="https://www.nethack.org/common/license.html" rel="noopener">NetHack General Public License</a>.
+      Level counts are cross-checked against the level description files actually shipped in <code>dat/</code>.
+    </dd>
+
+    <dt>Placement rules</dt>
+    <dd>
+      The meaning of <code>base</code>, <code>range</code>, <code>chainlevel</code> and <code>entry</code>
+      comes from <code>util/dgn_comp.y</code>, <code>src/dungeon.c</code> and <code>include/dungeon.h</code>
+      in the same source tree. Anything on this page taken from a source file other than the dungeon
+      definition is labelled with the file it came from.
+    </dd>
+
+    <dt>Names and links</dt>
+    <dd>
+      The game files use short prototype names (<code>bigrm</code>, <code>minetn</code>, <code>x-goal</code>).
+      The readable names and article links are a hand-written mapping onto
+      <a href="https://nethackwiki.com/" rel="noopener">NetHackWiki</a>, whose contributors license their
+      work <a href="https://creativecommons.org/licenses/by-sa/3.0/" rel="noopener">CC BY-SA 3.0</a>;
+      every link target is verified against a wiki database dump when this page&rsquo;s data is generated.
+      No placement fact on this page is taken from the wiki.
+    </dd>
+
+    <dt>Design</dt>
+    <dd>
+      Styled after <a href="https://smui.statico.io/" rel="noopener">SMUI</a>, using the
+      <a href="https://www.nordtheme.com/" rel="noopener">Nord</a> palette by Arctic Ice Studio
+      and <a href="https://www.jetbrains.com/lp/mono/" rel="noopener">JetBrains Mono</a>.
+    </dd>
+  </dl>
+
+  <div class="meta-bar">
+    <span>Built by statico &middot; <code>@statico</code> on Discord &middot; <span class="dim" id="gen"></span></span>
+    <span class="links">
+      <a href="https://github.com/statico/nethack-tools" rel="noopener">Source on GitHub</a>
+    </span>
+  </div>
+</footer>
+
+<script src="/assets/nav.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var WIKI = 'https://nethackwiki.com/wiki/';
+
+  var state = { data: null, version: null, open: null };
+
+  var elMaps   = document.getElementById('maps');
+  var elSeg    = document.getElementById('verSeg');
+  var elMeta   = document.getElementById('verMeta');
+  var elCount  = document.getElementById('mapCount');
+  var elDetail = document.getElementById('detail');
+  var elDiffs  = document.getElementById('diffs');
+  var elGen    = document.getElementById('gen');
+
+  /* -- helpers ---------------------------------------------------------- */
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function wikiLink(page, text) {
+    if (!page) return esc(text);
+    var url = WIKI + encodeURI(String(page).replace(/ /g, '_'));
+    return '<a class="wiki" href="' + esc(url) + '" target="_blank" rel="noopener">' +
+           esc(text) + '</a>';
+  }
+
+  function ver() { return state.data.versions[state.version]; }
+
+  function dungeonsOf(v) { return v.dungeons; }
+
+  function findDungeon(name) {
+    var list = dungeonsOf(ver());
+    for (var i = 0; i < list.length; i++) if (list[i].name === name) return list[i];
+    return null;
+  }
+
+  function findLevel(dname, lname) {
+    var d = findDungeon(dname);
+    if (!d) return null;
+    for (var i = 0; i < d.levels.length; i++) if (d.levels[i].name === lname) return d.levels[i];
+    return null;
+  }
+
+  function findBranch(dname, bname) {
+    var d = findDungeon(dname);
+    if (!d) return null;
+    for (var i = 0; i < d.branches.length; i++) if (d.branches[i].name === bname) return d.branches[i];
+    return null;
+  }
+
+  // ↓ / ↑ for staircases, ◊ for a magic portal.
+  function branchIcon(br) {
+    if (br.branchtype === 'portal') return '&loz;';
+    return br.direction === 'up' ? '&uarr;' : '&darr;';
+  }
+
+  function flagBadges(flags) {
+    var COLOR = {
+      hellish: 'b-red', mazelike: 'b-dim', town: 'b-green',
+      roguelike: 'b-yellow', unconnected: 'b-orange'
+    };
+    return (flags || []).map(function (f) {
+      return '<span class="badge ' + (COLOR[f] || 'b-dim') + '">' + esc(f) + '</span>';
+    }).join(' ');
+  }
+
+  function alignBadge(a) {
+    if (!a) return '';
+    var COLOR = { lawful: 'b-frost', neutral: 'b-green', chaotic: 'b-red' };
+    return '<span class="badge ' + (COLOR[a] || 'b-dim') + '">' + esc(a) + '</span>';
+  }
+
+  var SEP = '~';
+
+  function key(kind, dungeon, name) {
+    return [kind, dungeon, name].map(encodeURIComponent).join(SEP);
+  }
+
+  /* -- diagram ---------------------------------------------------------- */
+
+  // Greedy interval packing so overlapping brackets get their own column
+  // instead of drawing on top of each other.
+  function assignLanes(items) {
+    var ends = [];
+    items.slice().sort(function (a, b) { return (a.lo - b.lo) || (a.hi - b.hi); })
+      .forEach(function (it) {
+        for (var i = 0; i < ends.length; i++) {
+          if (ends[i] < it.lo) { ends[i] = it.hi; it.lane = i; return; }
+        }
+        it.lane = ends.length;
+        ends.push(it.hi);
+      });
+    return Math.max(1, ends.length);
+  }
+
+  function chipHtml(it) {
+    var pressed = state.open === it.key ? 'true' : 'false';
+    return '<button type="button" class="chip ' + it.cls + '" data-key="' + esc(it.key) + '"' +
+           ' aria-expanded="' + pressed + '" aria-controls="detail">' +
+             '<span class="ico" aria-hidden="true">' + it.ico + '</span>' +
+             '<span class="nm">' + esc(it.label) + '</span>' +
+             (it.sub ? '<span class="pl">' + esc(it.sub) + '</span>' : '') +
+           '</button>';
+  }
+
+  // A top-anchored single level is already labelled by the row number in the
+  // gutter, so repeating "level 7" on the chip is noise. Everything else --
+  // ranges, bottom-anchored levels, chained ones -- keeps its wording.
+  function subText(x) {
+    return (x.anchor === 'top' && x.rows[0] === x.rows[1]) ? '' : x.placement;
+  }
+
+  function dungeonHtml(d) {
+    var rows = d.nominal_levels;
+    var items = [];
+
+    d.levels.forEach(function (lv) {
+      items.push({
+        kind: 'level', lo: lv.rows[0], hi: lv.rows[1],
+        key: key('level', d.name, lv.name),
+        cls: 'is-level' + (lv.is_entry ? ' is-entry' : ''),
+        ico: '&bull;', label: lv.display, sub: subText(lv),
+        laneCls: 'k-level'
+      });
+    });
+    d.branches.forEach(function (br) {
+      items.push({
+        kind: 'branch', lo: br.rows[0], hi: br.rows[1],
+        key: key('branch', d.name, br.name),
+        cls: 'is-branch', ico: branchIcon(br),
+        label: br.display, sub: subText(br),
+        laneCls: 'k-branch'
+      });
+    });
+
+    var spans = items.filter(function (it) { return it.hi > it.lo; });
+    var lanes = assignLanes(spans);
+
+    var parts = ['<i class="rail"></i>'];
+    var byRow = {};
+    items.forEach(function (it) {
+      (byRow[it.lo] = byRow[it.lo] || []).push(it);
+    });
+
+    for (var r = 1; r <= rows; r++) {
+      // Only dungeons with a random length need the "= N" marker; a fixed-depth
+      // dungeon's bottom row number is simply the truth.
+      parts.push('<i class="rn' + (r === rows && d.range ? ' is-last' : '') +
+                 '" style="grid-row:' + r + '">' + r + '</i>');
+      var here = byRow[r];
+      if (!here) continue;
+      var hasBranch = here.some(function (it) { return it.kind === 'branch'; });
+      parts.push('<i class="dot ' + (hasBranch ? 'k-branch' : 'k-level') +
+                 '" style="grid-row:' + r + '"></i>');
+      parts.push('<div class="cell" style="grid-row:' + r + '">' +
+                 here.map(chipHtml).join('') + '</div>');
+    }
+
+    spans.forEach(function (it) {
+      parts.push('<i class="lane ' + it.laneCls + '" style="grid-row:' + it.lo + '/' +
+                 (it.hi + 1) + ';grid-column:' + (3 + it.lane) + '"></i>');
+    });
+
+    var entry = d.entered_by[0];
+    var head = '<div class="dgn-hd">' +
+      '<button type="button" class="dgn-title" data-key="' + esc(key('dungeon', d.name, '')) + '"' +
+        ' aria-expanded="' + (state.open === key('dungeon', d.name, '') ? 'true' : 'false') + '"' +
+        ' aria-controls="detail">' + esc(d.display) + '</button>' +
+      '<span class="row" style="gap:calc(var(--step)*2)">' +
+        '<span class="badge b-frost">' + esc(d.size_text) + ' levels</span>' +
+        alignBadge(d.alignment) + flagBadges(d.flags) +
+      '</span>' +
+      (entry
+        ? '<span class="small dim" style="flex-basis:100%">from ' + esc(entry.from_display) +
+          ', ' + esc(entry.placement) + '</span>'
+        : '<span class="small dim" style="flex-basis:100%">' +
+          (d.flags.indexOf('unconnected') >= 0
+            ? 'not connected to any branch'
+            : 'the top of the dungeon') + '</span>') +
+      '</div>';
+
+    return '<div class="dgn" style="--rows:' + rows + ';--lanes:' + lanes + '">' + head +
+           '<div class="map">' + parts.join('') + '</div></div>';
+  }
+
+  function renderMaps() {
+    var list = dungeonsOf(ver());
+    elMaps.innerHTML = list.map(dungeonHtml).join('');
+    var nl = 0, nb = 0;
+    list.forEach(function (d) { nl += d.levels.length; nb += d.branches.length; });
+    elCount.textContent = list.length + ' dungeons · ' + nb + ' branches · ' + nl + ' special levels';
+  }
+
+  /* -- detail ----------------------------------------------------------- */
+
+  function row(k, v) {
+    return v == null || v === '' ? '' : '<dt>' + esc(k) + '</dt><dd>' + v + '</dd>';
+  }
+
+  function levelTable(d) {
+    if (!d.levels.length) return '<div class="empty">No named special levels.</div>';
+    return '<div class="tbl-scroll"><table class="tbl">' +
+      '<thead><tr><th>Level</th><th>Where</th><th>Maps</th><th>Notes</th></tr></thead><tbody>' +
+      d.levels.map(function (lv) {
+        var notes = [];
+        if (lv.chance !== 100) notes.push(lv.chance + '% chance');
+        if (lv.is_entry) notes.push('you arrive here');
+        return '<tr>' +
+          '<td><button type="button" class="chip is-level" data-key="' + esc(key('level', d.name, lv.name)) +
+            '" aria-controls="detail"><span class="ico" aria-hidden="true">&bull;</span>' +
+            '<span class="nm">' + esc(lv.display) + '</span></button><br>' +
+            '<code class="proto small">' + esc(lv.name) + '</code></td>' +
+          '<td>' + esc(lv.placement) + '</td>' +
+          '<td>' + (lv.nlevels ? lv.nlevels : 1) + '</td>' +
+          '<td class="small dim">' + [alignBadge(lv.alignment), flagBadges(lv.flags),
+                                      esc(notes.join(', '))].filter(Boolean).join(' ') + '</td>' +
+        '</tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  function branchTable(d) {
+    if (!d.branches.length) return '';
+    return '<div class="tbl-scroll"><table class="tbl">' +
+      '<thead><tr><th>Branch</th><th>Entrance</th><th>Kind</th></tr></thead><tbody>' +
+      d.branches.map(function (br) {
+        return '<tr>' +
+          '<td><button type="button" class="chip is-branch" data-key="' + esc(key('branch', d.name, br.name)) +
+            '" aria-controls="detail"><span class="ico" aria-hidden="true">' + branchIcon(br) +
+            '</span><span class="nm">' + esc(br.display) + '</span></button></td>' +
+          '<td>' + esc(br.placement) + '</td>' +
+          '<td class="small dim">' + esc(br.branchtype) + ' / ' + esc(br.direction) + '</td>' +
+        '</tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  function notesFor(name) {
+    return (ver().notes || []).filter(function (n) { return n.dungeon === name; })
+      .map(function (n) {
+        return '<div class="note note-warn"><b>' + esc(n.title) + '.</b> ' + esc(n.text) +
+               ' <span class="dim">Source: ' + esc(n.source) + '.</span></div>';
+      }).join('');
+  }
+
+  function dungeonDetail(d) {
+    var e = d.entered_by[0];
+    return {
+      title: d.display,
+      badges: '<span class="badge b-frost">' + esc(d.size_text) + ' levels</span>' +
+              alignBadge(d.alignment) + flagBadges(d.flags),
+      body:
+        '<div class="detail-cols">' +
+          '<div class="stack">' +
+            '<dl class="kv">' +
+              row('Depth', esc(d.size_text) + ' levels' +
+                  (d.range ? ' <span class="dim">(base ' + d.base + ', range ' + d.range + ')</span>'
+                           : ' <span class="dim">(fixed)</span>')) +
+              row('Entrance', e
+                ? esc(e.placement) + ' of ' + esc(e.from_display) + ' &mdash; ' +
+                  esc(e.branchtype) + ', ' + esc(e.direction)
+                : (d.flags.indexOf('unconnected') >= 0
+                    ? 'none &mdash; flagged <code>unconnected</code>'
+                    : 'none &mdash; this is where the game starts')) +
+              row('You arrive on', esc(d.entry_text)) +
+              row('Alignment', d.alignment ? esc(d.alignment) : null) +
+              row('Flags', d.flags.length ? flagBadges(d.flags) : '<span class="dim">none</span>') +
+              row('Bones tag', d.bonetag ? '<code>' + esc(d.bonetag) + '</code>' : null) +
+              row('Proto file', d.protofile ? '<code>' + esc(d.protofile) + '</code>' : null) +
+              row('Filler level', d.lvlfill ? '<code>' + esc(d.lvlfill) + '.lua</code>' : null) +
+              row('Themed rooms', d.themerooms ? '<code>' + esc(d.themerooms) + '</code>' : null) +
+              row('Wiki', d.page ? wikiLink(d.page, d.page + ' ↗') : null) +
+            '</dl>' +
+            notesFor(d.name) +
+            branchTable(d) +
+          '</div>' +
+          '<div class="stack">' +
+            '<div class="label">Special levels</div>' +
+            levelTable(d) +
+          '</div>' +
+        '</div>'
+    };
+  }
+
+  function levelDetail(d, lv) {
+    var notes = [];
+    if (lv.chance !== 100) notes.push('Created only ' + lv.chance + '% of the time.');
+    if (lv.nlevels > 1) notes.push('One of ' + lv.nlevels + ' interchangeable maps (' +
+                                   lv.name + '-1 … ' + lv.name + '-' + lv.nlevels + ').');
+    if (lv.is_entry) notes.push('This is the level you arrive on when you enter ' + d.display + '.');
+    if (lv.chainlevel) notes.push('Placed relative to the ' + lv.chainlevel + ' level, so the two always ' +
+                                  'keep the same spacing.');
+    return {
+      title: lv.display,
+      badges: '<span class="badge b-purple">' + esc(d.display) + '</span>' +
+              alignBadge(lv.alignment) + flagBadges(lv.flags),
+      body:
+        '<dl class="kv">' +
+          row('Prototype', '<code class="proto">' + esc(lv.name) + '</code>') +
+          row('Dungeon', '<button type="button" class="chip" data-key="' +
+              esc(key('dungeon', d.name, '')) + '" aria-controls="detail"><span class="nm">' +
+              esc(d.display) + '</span></button>') +
+          row('Placement', esc(lv.placement) +
+              ' <span class="dim">(base ' + lv.base + ', range ' + lv.range +
+              (lv.chainlevel ? ', chained to ' + esc(lv.chainlevel) : '') + ')</span>') +
+          row('Drawn on', lv.rows[0] === lv.rows[1]
+              ? 'row ' + lv.rows[0] : 'rows ' + lv.rows[0] + '–' + lv.rows[1]) +
+          row('Map variants', String(lv.nlevels || 1)) +
+          row('Alignment', lv.alignment ? esc(lv.alignment) : null) +
+          row('Flags', lv.flags.length ? flagBadges(lv.flags) : '<span class="dim">none</span>') +
+          row('Bones tag', lv.bonetag ? '<code>' + esc(lv.bonetag) + '</code>' :
+              '<span class="dim">none &mdash; no bones files here</span>') +
+          row('Wiki', lv.page ? wikiLink(lv.page, lv.page + ' ↗') : null) +
+        '</dl>' +
+        (notes.length ? '<div class="note" style="margin-top:calc(var(--step)*4)">' +
+                        esc(notes.join(' ')) + '</div>' : '')
+    };
+  }
+
+  function branchDetail(d, br) {
+    var tgt = findDungeon(br.name);
+    return {
+      title: d.display + ' → ' + br.display,
+      badges: '<span class="badge b-frost">' + esc(br.branchtype) + '</span>' +
+              '<span class="badge b-dim">' + esc(br.direction) + '</span>',
+      body:
+        '<dl class="kv">' +
+          row('Entrance', esc(br.placement) + ' of ' + esc(d.display) +
+              ' <span class="dim">(base ' + br.base + ', range ' + br.range +
+              (br.chainlevel ? ', chained to ' + esc(br.chainlevel) : '') + ')</span>') +
+          row('Direction', esc(br.direction) === 'up'
+              ? 'up &mdash; you climb out of ' + esc(d.display)
+              : 'down &mdash; you descend out of ' + esc(d.display)) +
+          row('Connection', '<code>' + esc(br.branchtype) + '</code> &mdash; ' + esc(br.type_note)) +
+          row('Leads to', tgt
+              ? '<button type="button" class="chip" data-key="' + esc(key('dungeon', tgt.name, '')) +
+                '" aria-controls="detail"><span class="nm">' + esc(tgt.display) + '</span></button> ' +
+                '<span class="dim">' + esc(tgt.size_text) + ' levels; you arrive on ' +
+                esc(tgt.entry_text) + '</span>'
+              : null) +
+          row('Wiki', tgt && tgt.page ? wikiLink(tgt.page, tgt.page + ' ↗') : null) +
+        '</dl>'
+    };
+  }
+
+  function hide() { elDetail.hidden = true; elDetail.innerHTML = ''; }
+
+  // Never re-enters render(): if the selection does not exist in the current
+  // version it just drops it, and the caller's render pass has already drawn
+  // the maps without any chip pressed.
+  function renderDetail() {
+    if (!state.open) { hide(); return; }
+    var parts = state.open.split(SEP).map(decodeURIComponent);
+    var kind = parts[0], dname = parts[1], name = parts[2];
+    var d = findDungeon(dname);
+    if (!d) { state.open = null; hide(); return; }
+
+    var view = null;
+    if (kind === 'dungeon') view = dungeonDetail(d);
+    else if (kind === 'level') {
+      var lv = findLevel(dname, name);
+      view = lv ? levelDetail(d, lv) : null;
+    } else if (kind === 'branch') {
+      var br = findBranch(dname, name);
+      view = br ? branchDetail(d, br) : null;
+    }
+    if (!view) { state.open = null; hide(); return; }
+
+    elDetail.innerHTML =
+      '<div class="card-hd">' +
+        '<h2 id="detailTitle">' + esc(view.title) + '</h2>' +
+        '<span class="row" style="gap:calc(var(--step)*2)">' + view.badges +
+          '<button type="button" class="btn" id="detailClose">Close</button></span>' +
+      '</div>' +
+      '<div class="card-bd">' + view.body + '</div>';
+    elDetail.setAttribute('aria-labelledby', 'detailTitle');
+    elDetail.hidden = false;
+    var close = document.getElementById('detailClose');
+    if (close) close.addEventListener('click', function () { closeDetail(true); });
+  }
+
+  // One render pass, then one hash write, always in that order — renderDetail()
+  // may clear state.open, and the hash has to reflect what is actually shown.
+  function render() {
+    renderSeg();
+    renderMeta();
+    renderMaps();
+    renderDetail();
+  }
+
+  function syncHash() {
+    if (!history.replaceState) return;
+    history.replaceState(null, '', location.pathname + location.search +
+      '#' + state.version + (state.open ? SEP + state.open : ''));
+  }
+
+  function openDetail(k, scroll) {
+    state.open = k;
+    render();
+    syncHash();
+    if (elDetail.hidden || scroll === false) return;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    elDetail.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    elDetail.focus({ preventScroll: true });
+  }
+
+  function closeDetail(refocus) {
+    var prev = state.open;
+    state.open = null;
+    render();
+    syncHash();
+    if (refocus && prev) {
+      var b = elMaps.querySelector('[data-key="' + prev.replace(/"/g, '\\"') + '"]');
+      if (b) b.focus();
+    }
+  }
+
+  /* -- versions --------------------------------------------------------- */
+
+  function renderSeg() {
+    elSeg.innerHTML = state.data.version_order.map(function (v) {
+      return '<button type="button" class="btn" data-ver="' + esc(v) + '"' +
+             ' aria-pressed="' + (v === state.version ? 'true' : 'false') + '">' +
+             esc(state.data.versions[v].label) + '</button>';
+    }).join('');
+  }
+
+  function renderMeta() {
+    var v = ver();
+    elMeta.innerHTML =
+      '<span class="badge b-dim">' + esc(v.source_file) + '</span>' +
+      '<span>' + esc(v.source_format) + '</span>' +
+      '<span class="dim">commit <code>' + esc(v.commit.slice(0, 10)) + '</code></span>';
+  }
+
+  function diffTable(label, items) {
+    if (!items.length) {
+      return '<div class="stack"><div class="label">' + esc(label) + '</div>' +
+             '<div class="note"><b>No differences.</b> The dungeon file is byte-for-byte the same ' +
+             'apart from its version header comment.</div></div>';
+    }
+    return '<div class="stack"><div class="label">' + esc(label) + ' &mdash; ' + items.length +
+      ' change' + (items.length === 1 ? '' : 's') + '</div>' +
+      '<div class="tbl-scroll"><table class="tbl">' +
+      '<thead><tr><th>What</th><th>Before</th><th>After</th></tr></thead><tbody>' +
+      items.map(function (it) {
+        if (it.kind === 'changed') {
+          return '<tr><td>' + esc(it.path) + '</td>' +
+                 '<td class="dim">' + esc(JSON.stringify(it.from)) + '</td>' +
+                 '<td>' + esc(JSON.stringify(it.to)) + '</td></tr>';
+        }
+        var cls = it.kind === 'added' ? 'diff-add' : 'diff-del';
+        return '<tr class="' + cls + '"><td>' + esc(it.path) + '</td>' +
+               '<td colspan="2">' + esc(it.detail) + '</td></tr>';
+      }).join('') + '</tbody></table></div></div>';
+  }
+
+  function renderDiffs() {
+    var order = state.data.version_order;
+    var out = [];
+    for (var i = 0; i < order.length - 1; i++) {
+      var k = order[i] + '->' + order[i + 1];
+      out.push(diffTable(order[i] + ' → ' + order[i + 1], state.data.diffs[k] || []));
+    }
+    elDiffs.innerHTML = out.join('');
+  }
+
+  /* -- events ----------------------------------------------------------- */
+
+  elSeg.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button[data-ver]');
+    if (!b) return;
+    var v = b.getAttribute('data-ver');
+    if (!state.data.versions[v] || v === state.version) return;
+    // The current selection is kept across the switch when the other version
+    // still has it (renderDetail drops it otherwise).
+    state.version = v;
+    render();
+    syncHash();
+  });
+
+  function onPick(e) {
+    var b = e.target.closest && e.target.closest('[data-key]');
+    if (!b) return;
+    var k = b.getAttribute('data-key');
+    if (state.open === k) closeDetail(true); else openDetail(k);
+  }
+
+  elMaps.addEventListener('click', onPick);
+  elDetail.addEventListener('click', onPick);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && state.open) closeDetail(true);
+  });
+
+  /* -- boot ------------------------------------------------------------- */
+
+  // '#<version>~<kind>~<dungeon>~<name>'. '~' is left alone by
+  // encodeURIComponent, so the separator can never collide with an encoded name.
+  function fromHash() {
+    var h = (location.hash || '').replace(/^#/, '');
+    if (!h) return null;
+    var i = h.indexOf(SEP);
+    return i < 0 ? { v: h, k: null } : { v: h.slice(0, i), k: h.slice(i + 1) };
+  }
+
+  fetch('/data/dungeon.json')
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      state.data = data;
+      if (elGen && data.generated) elGen.textContent = 'Data generated ' + data.generated;
+
+      var order = data.version_order || [];
+      if (!order.length) throw new Error('no versions in data');
+      var h = fromHash();
+      state.version = (h && data.versions[h.v]) ? h.v : order[order.length - 1];
+      state.open = h ? h.k : null;
+
+      render();
+      renderDiffs();
+      syncHash();
+
+      // Back/forward over our own replaceState writes, and hand-edited hashes.
+      window.addEventListener('hashchange', function () {
+        var n = fromHash();
+        var v = (n && state.data.versions[n.v]) ? n.v : state.version;
+        var k = n ? (n.k || null) : null;
+        if (v === state.version && k === state.open) return;
+        state.version = v;
+        state.open = k;
+        render();
+        syncHash();
+      });
+    })
+    .catch(function (err) {
+      elMaps.innerHTML = '<div class="empty">Could not load <code>/data/dungeon.json</code> &mdash; ' +
+                         esc(err.message) + '</div>';
+    });
+
+  // Exposed for verification only.
+  window.__dungeon = { state: state, assignLanes: assignLanes };
+})();
+</script>
+</body></html>

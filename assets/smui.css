@@ -118,7 +118,10 @@ code, kbd, pre { font-family: var(--mono); }
 
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 calc(var(--step) * 6); }
 .stack > * + * { margin-top: calc(var(--step) * 4); }
-.page { padding: calc(var(--step) * 8) 0 calc(var(--step) * 20); }
+/* padding-block, not shorthand: .page and .wrap sit on the same element, and a
+   `padding: N 0` shorthand here would win on source order and wipe out .wrap's
+   horizontal gutter, leaving content flush to the viewport edge below --maxw. */
+.page { padding-block: calc(var(--step) * 8) calc(var(--step) * 20); }
 
 .grid { display: grid; gap: calc(var(--step) * 4); }
 .grid-2 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
@@ -190,6 +193,9 @@ code, kbd, pre { font-family: var(--mono); }
   border-bottom: 1px solid hsl(var(--line));
   display: flex; align-items: center; justify-content: space-between;
   gap: calc(var(--step) * 3);
+  /* wrap so a header holding a title plus a control stacks on narrow screens
+     instead of pushing past the viewport edge */
+  flex-wrap: wrap;
   background: hsl(var(--surface-2));
 }
 .card-bd { padding: calc(var(--step) * 3.5); }
@@ -364,7 +370,8 @@ details > summary:hover { color: hsl(var(--text-0)); }
 .footer {
   border-top: 1px solid hsl(var(--line));
   margin-top: calc(var(--step) * 16);
-  padding: calc(var(--step) * 6) 0 calc(var(--step) * 10);
+  /* padding-block for the same reason as .page — see the note there. */
+  padding-block: calc(var(--step) * 6) calc(var(--step) * 10);
   color: hsl(var(--text-2)); font-size: 11px;
 }
 .footer a { color: hsl(var(--text-1)); }
