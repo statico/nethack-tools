@@ -34,6 +34,17 @@ wiki has been updated for 5.0.
   the answer to one item.
 - **Probability ranking.** Candidates ranked by how often they actually generate, using the
   `prob` field from the object tables.
+- **Quick-pick prices for the scenario you're in.** The twelve base costs backing the most
+  objects in your enabled classes — 4, 5, 7, 10, 20, 50, 60, 100, 150, 200, 300, 500, the
+  same ladder in both versions — run *forward* through the same algorithm under your
+  current Charisma, direction and modifiers, so the chips show what you'd actually be
+  quoted. At Cha 8 they read 5/7/9/13/27/67/80/133/200/267/400/667; at Cha 18,
+  3/4/5/7/13/33/40/67/100/133/200/333. The list is derived from the object table, so it
+  tracks the version switch, the enchantment field and the class filter rather than being
+  a hardcoded list that drifts.
+- **Charisma defaults to 11**, the bottom of the 11–15 band where the ladder applies no
+  adjustment at all, so an untouched form prices at face value. The hint under the field
+  names the band you're in.
 
 It reports honestly: when six items share a base cost, it says six.
 
@@ -90,7 +101,15 @@ screenshot.
   a click-to-load facade so eight iframes don't load at once.
 - **Horizontal and vertical flip toggles**, because 3.7 and 5.0 mirror Sokoban levels at
   generation — so the reference map can be made to match what's actually on screen. 3.6
-  never flips.
+  never flips. The toggles are repeated inside the level panel, so you can re-orient
+  without scrolling back to the top of the page; both sets stay in sync.
+- **The walkthrough video mirrors with the map.** Maps are flipped as grid data — the text
+  stays selectable — but a video can only be flipped as pixels, so the embed is the one
+  place a CSS transform is the right answer. Only the media is transformed, not the
+  surrounding box, so the play button doesn't become a backwards triangle. A mirrored
+  YouTube player has a mirrored control bar too, so there's an **Unmirror video** escape
+  hatch. Flipping while a video is playing patches the DOM in place rather than
+  re-rendering, so the video keeps playing instead of restarting.
 
 ### [Checklist](https://nethack.statico.io/checklist)
 
@@ -197,6 +216,17 @@ before first paint rather than flashing the wrong theme. `color-scheme` is set p
 so native selects, number spinners and scrollbars follow too.
 
 Nothing renders below **12px**, including the JS-scaled Sokoban maps.
+
+Every numeric field keeps its native up/down spinners on screen. WebKit hides them until
+hover or focus, which makes them undiscoverable on values people nudge one at a time —
+Charisma, dungeon level, enchantment — so `smui.css` forces them visible in both themes.
+
+`.stack` spaces its children with `margin-top`, which has two consequences worth knowing
+before you copy a pattern: a `gap` set on a `.stack` does nothing, and a child carrying its
+own `margin: 0` silently cancels the spacing. Both were happening. Use **`.stack-tight`**
+where the spacing has to survive that — it is a real flex column, so `gap` applies and no
+child margin can override it. Where an element only means "no trailing space", write
+`margin-bottom: 0`, never `margin: 0`.
 
 ## Credits
 

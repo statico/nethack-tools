@@ -33,7 +33,46 @@
   .deriv-branch { margin: calc(var(--step) * 2) 0 0; }
   .deriv-step { padding-left: calc(var(--step) * 4); color: hsl(var(--text-2)); }
   .deriv-step::before { content: '· '; color: hsl(var(--frost-2)); }
-  .bigwrap { max-width: 200px; }
+  /* Observed price and Charisma are a matched pair — same input size, labels on
+     one line, a hint under each. Charisma used to stretch to fill the card,
+     which made a two-digit field the widest thing in the observation.
+
+     Two tracks, always: minmax(0, 190px) caps them at a width that suits a
+     three-digit number and lets them shrink together on a phone, so the pair
+     stays side by side and evenly matched instead of one stacking or
+     stretching. */
+  .obs-inputs {
+    display: grid;
+    grid-template-rows: auto auto auto;        /* label / input / hint */
+    grid-auto-flow: column;                    /* one field per column */
+    grid-auto-columns: minmax(0, 190px);
+    gap: calc(var(--step) * 1.5) calc(var(--step) * 4);
+    justify-content: start;
+  }
+  /* display:contents dissolves the two .field wrappers so label, input and hint
+     each land in a shared grid row. The hint row is then exactly as tall as the
+     taller of the two hints — the fields stay level without reserving a fixed
+     two lines, which left dead space under a one-line hint. Column auto-flow is
+     what keeps each field in its own column: the default row-major order would
+     interleave the two fields' six children across the tracks. */
+  .obs-inputs .field { display: contents; }
+  /* A disabled Charisma still carries .big, and .big is frost-colored — which
+     reads as the liveliest control in the card while being inert. */
+  .obs-inputs input:disabled { color: hsl(var(--text-2)); cursor: not-allowed; }
+
+  /* Segmented controls size to their buttons. Left to stretch, the two-button
+     Direction control drew a box across the whole card with an empty right
+     two-thirds. */
+  .obs .seg { width: max-content; max-width: 100%; }
+
+  /* Quick-pick prices — narrower than a normal .btn so a dozen fit without
+     wrapping into a wall, but a shared min-width so 5 and 667 are the same
+     size and the row reads as a ruler rather than a ransom note. */
+  .quick {
+    padding: calc(var(--step) * 1) calc(var(--step) * 2);
+    letter-spacing: 0.5px; min-width: 46px; text-align: center;
+  }
+  .quick[aria-pressed='true'] { border-color: hsl(var(--frost-2)); color: hsl(var(--frost-2)); }
   .sum { display: flex; gap: calc(var(--step) * 10); flex-wrap: wrap; align-items: flex-end; }
   .sum .stat { color: hsl(var(--frost-2)); line-height: 1; }
   .grp-hd { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--step) * 3); flex-wrap: wrap; }
@@ -96,7 +135,7 @@
       <h2>Observations</h2>
       <button class="btn" id="add-obs">+ Add observation</button>
     </div>
-    <p class="small dim" style="margin:0">
+    <p class="small dim" style="margin-bottom:0">
       One price rarely pins an item down. Add a second reading — the sell price for the same item,
       or the same item quoted at another shop or another Charisma — and the candidate sets are
       intersected.
@@ -111,7 +150,7 @@
   <section class="card">
     <div class="card-hd"><span class="label">How this works &amp; what it cannot tell you</span></div>
     <div class="card-bd stack">
-      <p style="margin:0">
+      <p style="margin-bottom:0">
         Price identification narrows an item to a <strong>base-cost bucket</strong>, never to a
         single item. Base cost 100 alone covers dozens of objects. Combine the bucket with what
         you already know — the object class, the appearance, what you have already identified —
@@ -119,8 +158,8 @@
       </p>
       <details>
         <summary>The algorithm, exactly</summary>
-        <div class="deriv stack" style="gap:calc(var(--step)*2)">
-          <p style="margin:0"><strong>Buying (<code>get_cost</code>)</strong> — base cost, 0 becomes 5;
+        <div class="deriv stack-tight">
+          <p style="margin-bottom:0"><strong>Buying (<code>get_cost</code>)</strong> — base cost, 0 becomes 5;
           a 1-in-4 unidentified surcharge (×4/3, keyed off the object's ID, unknowable to you);
           then at most one of dunce cap / Tourist below XL14 / visible tourist shirt (×4/3, they are
           <em>if&nbsp;/&nbsp;else-if</em> in the C, so they never stack); then the Charisma ladder;
@@ -128,12 +167,12 @@
           <code>tmp = floor((floor(tmp×10 / divisor) + 5) / 10)</code>; clamp up to 1; then
           artifact ×4; then the angry-shopkeeper <code>+ floor((tmp+2)/3)</code>. Those last two
           land <em>after</em> the rounding, on purpose.</p>
-          <p style="margin:0"><strong>Selling (<code>set_cost</code>)</strong> — the shopkeeper keeps
+          <p style="margin-bottom:0"><strong>Selling (<code>set_cost</code>)</strong> — the shopkeeper keeps
           half (÷2), or two thirds (÷3) if you look like a rube; a separate 1-in-4 markdown (×3/4,
           keyed off the shopkeeper's ID, and only when base cost &gt; 1); the same rounding tweak;
           never rounded down to zero. Charisma and shopkeeper anger do not affect what you are
           offered.</p>
-          <p style="margin:0">The reverse lookup brute-forces every base cost from 1 to 30000
+          <p style="margin-bottom:0">The reverse lookup brute-forces every base cost from 1 to 30000
           forward through the algorithm along both branches of the unknowable surcharge and keeps
           exact matches. It does not try to invert the arithmetic — round-half-up is not
           invertible.</p>
@@ -141,24 +180,24 @@
       </details>
       <details>
         <summary>Probability footnotes</summary>
-        <div class="deriv stack" style="gap:calc(var(--step)*2)">
-          <p style="margin:0">Percentages are the item's generation probability
+        <div class="deriv stack-tight">
+          <p style="margin-bottom:0">Percentages are the item's generation probability
           <em>within its own object class</em>, using the class totals from the object table as
           the denominator — never a hardcoded 1000. In 5.0 the weapon probabilities sum to
           <strong>1002</strong>, because silver mace was added without rebalancing the rest.</p>
-          <p style="margin:0">In <strong>3.6</strong> every ring carries <code>prob 0</code> in
+          <p style="margin-bottom:0">In <strong>3.6</strong> every ring carries <code>prob 0</code> in
           <code>objects.c</code> — that is genuinely what the table says; the ring class is filled
           by picking uniformly instead. Ring probabilities for 3.6 are therefore shown as a uniform
           1/28 and marked <span class="badge b-dim">uniform</span>. 3.7 and 5.0 give every ring an
           explicit probability of 1.</p>
-          <p style="margin:0">The <code>other</code> class lumps several C object classes together
+          <p style="margin-bottom:0">The <code>other</code> class lumps several C object classes together
           (coins, iron balls, chains, venom), so its total is not a meaningful denominator and no
           probability is shown for it.</p>
-          <p style="margin:0">Objects with base cost 0 are kept in the data so the denominators stay
+          <p style="margin-bottom:0">Objects with base cost 0 are kept in the data so the denominators stay
           right, but they are never offered as candidates.</p>
         </div>
       </details>
-      <p class="small dim" id="src-note" style="margin:0"></p>
+      <p class="small dim" id="src-note" style="margin-bottom:0"></p>
     </div>
   </section>
 
@@ -318,21 +357,29 @@
             : '<span class="small dim">shop reading</span>') +
         '</div>' +
         '<div class="card-bd stack">' +
-          '<div class="row" style="align-items:flex-end">' +
-            '<div class="field bigwrap">' +
+          '<div class="obs-inputs">' +
+            '<div class="field">' +
               '<label class="label" for="p' + o.id + '">Observed price</label>' +
               '<input class="big" type="number" min="0" step="1" id="p' + o.id + '" ' +
                 'data-obs="' + o.id + '" data-k="price" value="' + esc(o.price) + '" ' +
                 'placeholder="0" inputmode="numeric">' +
+              '<span class="small dim">' +
+                (sell ? 'Gold offered, as stated.' : 'Gold quoted, as stated.') + '</span>' +
             '</div>' +
-            '<div class="field" style="flex:1;min-width:170px">' +
-              '<span class="label">Charisma</span>' +
-              '<input type="number" min="3" max="25" step="1" ' +
+            '<div class="field">' +
+              '<label class="label" for="cha' + o.id + '">Charisma</label>' +
+              '<input class="big" type="number" min="3" max="25" step="1" id="cha' + o.id + '" ' +
                 'data-obs="' + o.id + '" data-k="cha" value="' + o.cha + '"' +
                 (sell ? ' disabled' : '') + '>' +
-              (sell ? '<span class="small dim">Charisma does not affect sell prices.</span>' : '') +
+              // Kept short enough to sit on one line at the field's width: a
+              // hint that wraps makes this card's rows sit lower than the next
+              // one's. It reads fine under a disabled Charisma field.
+              '<span class="small dim" id="chahint' + o.id + '">' +
+                (sell ? 'Ignored on sell prices.' : chaHint(o.cha)) + '</span>' +
             '</div>' +
           '</div>' +
+
+          quickHtml(o) +
 
           '<div class="field">' +
             '<span class="label">Direction</span>' +
@@ -355,6 +402,101 @@
         '</div>' +
       '</div>';
     }).join('');
+  }
+
+  /* Defaults to 11 — the bottom of the 11-15 band, where the ladder applies no
+     adjustment at all, so an untouched form prices at face value. The hint
+     names the band so that default is legible rather than arbitrary. */
+  function chaHint(cha) {
+    if (cha > 18) return 'Cha 19+: price ÷ 2.';
+    if (cha === 18) return 'Cha 18: price × 2/3.';
+    if (cha >= 16) return 'Cha 16–17: price × 3/4.';
+    if (cha >= 11) return 'Cha 11–15: no adjustment.';
+    if (cha >= 8) return 'Cha 8–10: price × 4/3.';
+    if (cha >= 6) return 'Cha 6–7: price × 3/2.';
+    return 'Cha 3–5: price × 2.';
+  }
+
+  /* ---------- quick-pick prices ---------- */
+
+  /* The base costs backing the most objects in the classes you have enabled.
+     Derived from the table rather than hardcoded, so it tracks the version
+     switch, the enchantment field and the class filter. With everything on it
+     comes out as the familiar price-ID ladder — 4, 5, 7, 10, 20, 50, 60, 100,
+     150, 200, 300, 500, the same in both versions — because those really are
+     the crowded buckets. Twelve is where base cost 20 makes the cut, and 20 is
+     the scroll of identify. */
+  var QUICK_N = 12;
+
+  function commonBases() {
+    var counts = {};
+    activeObjects().forEach(function (o) {
+      if (o.cost <= 0 || !classOn(o.class)) return;
+      var b = E.effectiveBase(o, state.ench);
+      counts[b] = (counts[b] || 0) + 1;
+    });
+    return Object.keys(counts).map(Number)
+      .sort(function (a, b) { return counts[b] - counts[a] || a - b; })
+      .slice(0, QUICK_N)
+      .sort(function (a, b) { return a - b; });
+  }
+
+  /* Run each of those bases forward through the pricing algorithm under this
+     observation's exact settings, so the numbers offered are the ones this
+     scenario can actually produce. Cha 8 turns base 20/100/150 into 27/133/200;
+     Cha 18 turns them into 14/67/100. */
+  function quickPrices(o) {
+    if (!DATA) return [];
+    var q = obsQuery(o), seen = {}, out = [];
+    commonBases().forEach(function (base) {
+      var p = E.priceFor(base, q, false);
+      if (seen[p]) { seen[p].push(base); return; }
+      seen[p] = [base];
+      out.push({ price: p, bases: seen[p] });
+    });
+    return out.sort(function (a, b) { return a.price - b.price; });
+  }
+
+  /* The wrapper is always emitted, even with nothing to offer, so updateQuick()
+     always has something to find and refill when the classes come back on. */
+  function quickHtml(o) {
+    return '<div class="field" data-quick="' + o.id + '">' + quickInner(o) + '</div>';
+  }
+
+  function quickInner(o) {
+    if (!DATA) {
+      return '<span class="label">Common prices</span>' +
+             '<span class="small dim">Loading object tables&hellip;</span>';
+    }
+    var picks = quickPrices(o);
+    var cur = parseInt(o.price, 10);
+    if (!picks.length) {
+      return '<span class="label">Common prices</span>' +
+             '<span class="small dim">Enable an object class to see the prices it can produce.</span>';
+    }
+    return '' +
+      '<span class="label">Common ' + (o.direction === 'sell' ? 'offers' : 'prices') +
+        ' at these settings</span>' +
+      '<div class="chips">' +
+        picks.map(function (p) {
+          return '<button type="button" class="btn quick" data-act="quick" ' +
+            'data-obs="' + o.id + '" data-price="' + p.price + '" ' +
+            'aria-pressed="' + (p.price === cur) + '" ' +
+            'title="base cost ' + p.bases.join(' or ') + '">' + p.price + '</button>';
+        }).join('') +
+      '</div>' +
+      '<span class="small dim">Without the 1-in-4 unidentified surcharge, from the busiest base ' +
+        'costs in the classes you have enabled. A surcharged item reads higher.</span>';
+  }
+
+  /* Patched in place, never via renderObs() — Charisma is one of the inputs
+     that changes these, and a re-render would yank focus out of it
+     mid-keystroke. */
+  function updateQuick() {
+    state.obs.forEach(function (o) {
+      var box = document.querySelector('.field[data-quick="' + o.id + '"]');
+      if (box) box.innerHTML = quickInner(o);
+    });
   }
 
   function check(o, key, label, disabled) {
@@ -385,7 +527,17 @@
     };
   }
 
+  /* Everything that reaches the results also reaches the quick-pick chips —
+     version, enchantment, class filter, Charisma, direction, the modifier
+     checkboxes — so refresh them from the one place they all funnel through.
+     computeResults() has several early returns; keeping the call out here
+     means none of them can skip it. */
   function compute() {
+    updateQuick();
+    computeResults();
+  }
+
+  function computeResults() {
     if (!DATA) return;
 
     var live = state.obs.filter(function (o) {
@@ -722,6 +874,8 @@
     } else if (k === 'cha') {
       var v = parseInt(t.value, 10);
       o.cha = isFinite(v) ? Math.max(3, Math.min(25, v)) : 11;
+      var hint = el('chahint' + o.id);
+      if (hint) hint.textContent = chaHint(o.cha);
     } else {
       o[k] = t.checked;
     }
@@ -733,6 +887,22 @@
     if (!b) return;
     var o = findObs(b.getAttribute('data-obs'));
     var act = b.getAttribute('data-act');
+
+    // A quick-pick only fills in the price field, so patch that field rather
+    // than re-rendering the whole observation card. compute() refreshes the
+    // chip row, which replaces the button under the cursor — put focus back on
+    // its replacement so keyboard users are not dumped to the top of the page.
+    if (act === 'quick' && o) {
+      o.price = b.getAttribute('data-price');
+      var input = document.getElementById('p' + o.id);
+      if (input) input.value = o.price;
+      compute();
+      var again = document.querySelector(
+        '.field[data-quick="' + o.id + '"] .quick[data-price="' + o.price + '"]');
+      if (again) again.focus();
+      return;
+    }
+
     if (act === 'rm') {
       state.obs = state.obs.filter(function (x) { return x !== o; });
     } else if (act === 'dir' && o) {

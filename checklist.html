@@ -158,7 +158,7 @@
         <div class="scale small dim">
           <span>0</span><span>500</span><span>1000+</span>
         </div>
-        <p class="mid" style="margin:0" id="pray-msg">
+        <p class="mid" style="margin-bottom:0" id="pray-msg">
           Enter your current turn to see where you stand.
         </p>
       </div>
@@ -582,7 +582,7 @@
   function renderPrayerFacts(p) {
     if (!p) return;
     document.getElementById('pray-facts').innerHTML =
-      '<ul style="margin:0;padding-left:16px">' +
+      '<ul style="margin-bottom:0;padding-left:16px">' +
       (p.facts || []).map(function (f) {
         return '<li>' + render(f.text, f.links) + '</li>';
       }).join('') + '</ul>';

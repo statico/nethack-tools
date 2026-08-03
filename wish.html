@@ -173,7 +173,7 @@
     </div>
     <div class="card-bd stack">
       <div class="wishline" id="wishline"></div>
-      <p class="small dim" style="margin:0">
+      <p class="small dim" style="margin-bottom:0">
         <code>readobjnam_preparse()</code> loops over the adjectives, so their order does not
         matter to the parser — this is the order the game itself prints them in
         <code>doname()</code>, which is the least surprising thing to type back.
@@ -199,7 +199,7 @@
   <section class="card">
     <div class="card-hd"><span class="label">What this does and does not cover</span></div>
     <div class="card-bd stack">
-      <p style="margin:0">
+      <p style="margin-bottom:0">
         This is a model of <code>readobjnam()</code>, not of the whole game. It tells you how
         your wish string will be parsed and which requests survive. It does not tell you what
         to wish for — for that, read
@@ -208,32 +208,32 @@
       </p>
       <details>
         <summary>Assumptions and known gaps</summary>
-        <div class="stack" style="gap:calc(var(--step)*2);font-size:12px;color:hsl(var(--text-1))">
-          <p style="margin:0"><strong>Wizard mode is not modelled.</strong> Every rule below is
+        <div class="stack-tight" style="font-size:12px;color:hsl(var(--text-1))">
+          <p style="margin-bottom:0"><strong>Wizard mode is not modelled.</strong> Every rule below is
           the <code>!wizard</code> path. In debug mode the enchantment roll, the quantity test,
           the artifact roll and the object substitutions are all skipped.</p>
-          <p style="margin:0"><strong>Experience level.</strong> The random enchantment
+          <p style="margin-bottom:0"><strong>Experience level.</strong> The random enchantment
           <code>mksobj()</code> rolls is <code>rne(3)</code>, whose cap is
           <code>(u.ulevel &lt; 15) ? 5 : u.ulevel / 3</code>. All probabilities here use the
           cap of 5. Above XL 17 that cap rises, so requests of +6 and higher stop being exactly
           impossible and become merely absurd — of order one in ten thousand.</p>
-          <p style="margin:0"><strong>Default beatitude is not quantified.</strong> When you do
+          <p style="margin-bottom:0"><strong>Default beatitude is not quantified.</strong> When you do
           not say blessed, uncursed or cursed, the item keeps whatever <code>blessorcurse()</code>
           rolled inside <code>mksobj()</code>. That chance varies by object class and by object,
           and this tool does not enumerate it — it only tells you that the roll happened.</p>
-          <p style="margin:0"><strong>Not modelled at all:</strong> wizard-mode terrain and trap
+          <p style="margin-bottom:0"><strong>Not modelled at all:</strong> wizard-mode terrain and trap
           wishes, glob sizes, fruit names, corpses and statues of specific monsters, tin
           varieties, eroded and diluted items, box lock states, and the
           <code>named</code> / <code>called</code> / <code>labeled</code> suffixes.
           <code>readobjnam()</code> accepts all of them; this builder does not emit them.</p>
-          <p style="margin:0"><strong>Artifact counting.</strong> The failure roll uses
+          <p style="margin-bottom:0"><strong>Artifact counting.</strong> The failure roll uses
           <code>nartifact_exist()</code>, which counts every artifact that has come into
           existence — including ones generated on the floor, in a monster's inventory or in a
           bones file, which you may never have seen. The number you type in is a guess, and so
           is the answer.</p>
         </div>
       </details>
-      <p class="small dim" id="src-note" style="margin:0"></p>
+      <p class="small dim" id="src-note" style="margin-bottom:0"></p>
     </div>
   </section>
 

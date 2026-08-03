@@ -129,7 +129,7 @@
         <button class="btn" id="threat-reset">Reset to XL 1 / DL 1</button>
       </div>
 
-      <p class="small dim" style="margin:0;max-width:88ch">
+      <p class="small dim" style="margin-bottom:0;max-width:88ch">
         <code>level_difficulty()</code> is normally just the depth of the level, so the
         dungeon level field is that depth. It is <em>not</em> your depth if you are carrying
         the Amulet (then it is the deepest level you ever reached) or in the endgame. The
@@ -191,12 +191,14 @@
     <div class="card-bd stack">
       <details open>
         <summary>The exact rule, from <code>rndmonst()</code></summary>
-        <div class="stack" style="gap:calc(var(--step)*2);font-size:12px;color:hsl(var(--text-1))">
-          <p style="margin:0">Every time the game wants a random monster it walks
+        <div class="stack-tight" style="font-size:12px;color:hsl(var(--text-1))">
+          <p style="margin-bottom:0">Every time the game wants a random monster it walks
           <code>mons[]</code> from the first entry up to but not including
           <code>SPECIAL_PM</code> (the long worm tail; everything from there on is quest
           and endgame material that is never generated randomly) and keeps the entries
           that pass all of:</p>
+          <!-- margin:0 is right here: .stack-tight is a flex container, so the
+               gap comes from the parent and a list's own margins only add to it. -->
           <ul style="margin:0;padding-left:1.2em">
             <li><code>difficulty &gt;= level_difficulty / 6</code> — the too-weak cutoff.
               This is why sewer rats stop showing up.</li>
@@ -207,13 +209,13 @@
             <li>outside Gehennom, not <code>G_HELL</code>; inside Gehennom, not
               <code>G_NOHELL</code>, and only monsters whose alignment is 0 or negative.</li>
           </ul>
-          <p style="margin:0">Each survivor gets a weight of
+          <p style="margin-bottom:0">Each survivor gets a weight of
           <code>(geno &amp; G_FREQ) + align_shift()</code>, plus 3 in 3.7/5.0 if the level
           has a temperature the monster resists. A weight of zero means it is never picked.
           One survivor is then chosen with probability weight ÷ total weight — 3.6 walks a
           running total, 3.7 and 5.0 use weighted reservoir sampling, which gives the same
           distribution.</p>
-          <p style="margin:0"><strong>What this page cannot know:</strong> whether you have
+          <p style="margin-bottom:0"><strong>What this page cannot know:</strong> whether you have
           genocided or extinct-ed something (<code>mvitals[]</code>), the quest branch's own
           monster list (<code>qt_montype()</code>, used 6 times out of 7 there), the Rogue
           level's uppercase-only filter, the elemental planes, and
@@ -224,12 +226,12 @@
       </details>
       <details>
         <summary>Where difficulty comes from</summary>
-        <div class="stack" style="gap:calc(var(--step)*2);font-size:12px;color:hsl(var(--text-1))" id="diff-note"></div>
+        <div class="stack-tight" style="font-size:12px;color:hsl(var(--text-1))" id="diff-note"></div>
       </details>
       <details>
         <summary>Attack severity colours</summary>
-        <div class="stack" style="gap:calc(var(--step)*2);font-size:12px;color:hsl(var(--text-1))">
-          <p style="margin:0">The colour on an attack is keyed off its <code>AD_*</code>
+        <div class="stack-tight" style="font-size:12px;color:hsl(var(--text-1))">
+          <p style="margin-bottom:0">The colour on an attack is keyed off its <code>AD_*</code>
           damage type, which is a fact from the table — not a judgement about the monster.
           <span class="badge b-red">red</span> marks damage types that can end a game outright
           or take something back permanently: petrification, sliming, disintegration, level
@@ -244,9 +246,9 @@
       </details>
       <details>
         <summary>Differences between the versions</summary>
-        <div class="stack" style="gap:calc(var(--step)*2);font-size:12px;color:hsl(var(--text-1))" id="verdiff"></div>
+        <div class="stack-tight" style="font-size:12px;color:hsl(var(--text-1))" id="verdiff"></div>
       </details>
-      <p class="small dim" id="src-note" style="margin:0"></p>
+      <p class="small dim" id="src-note" style="margin-bottom:0"></p>
     </div>
   </section>
 
@@ -674,14 +676,14 @@
     var f = DATA.formulas;
     var mism = f.difficulty.mismatches_3_7_5_0 || [];
     el('diff-note').innerHTML =
-      '<p style="margin:0">Difficulty is a real column in the monster table — ' +
+      '<p style="margin-bottom:0">Difficulty is a real column in the monster table — ' +
         esc(f.difficulty.field) + ' — and it is what the generation window is compared ' +
         'against. It is not the monster\'s level.</p>' +
-      '<p style="margin:0"><strong>3.7 / 5.0:</strong> ' + esc(f.difficulty['3.7-5.0']) +
+      '<p style="margin-bottom:0"><strong>3.7 / 5.0:</strong> ' + esc(f.difficulty['3.7-5.0']) +
         '</p>' +
-      '<p style="margin:0"><strong>3.6:</strong> ' + esc(f.difficulty['3.6']) + '</p>' +
+      '<p style="margin-bottom:0"><strong>3.6:</strong> ' + esc(f.difficulty['3.6']) + '</p>' +
       (mism.length
-        ? '<p style="margin:0">Re-deriving <code>mstrength()</code> over the whole 3.7/5.0 ' +
+        ? '<p style="margin-bottom:0">Re-deriving <code>mstrength()</code> over the whole 3.7/5.0 ' +
           'table reproduces every value except ' +
           mism.map(function (r) {
             return '<strong>' + esc(r[0]) + '</strong> (table ' + r[1] +
@@ -690,13 +692,13 @@
           'source explicitly allows hand-set difficulty values. The table value is what ' +
           'the game uses and what is shown here.</p>'
         : '') +
-      '<p style="margin:0">Generation gates: <code>' + esc(f.generation.min) +
+      '<p style="margin-bottom:0">Generation gates: <code>' + esc(f.generation.min) +
         '</code> and <code>' + esc(f.generation.max) + '</code>, from ' +
         esc(f.generation.gates['3.7-5.0']) + ' (3.7 / 5.0) and ' +
         esc(f.generation.gates['3.6']) + ' (3.6). Eligibility: ' +
         esc(f.generation.uncommon['3.7-5.0']) + ' / ' +
         esc(f.generation.uncommon['3.6']) + '.</p>' +
-      '<p style="margin:0">Weights: <code>' + esc(f.generation.weight) + '</code> — ' +
+      '<p style="margin-bottom:0">Weights: <code>' + esc(f.generation.weight) + '</code> — ' +
         esc(f.generation.align_shift.rule) + '</p>';
 
     /* real, computed differences between the two tables */
@@ -709,18 +711,18 @@
       return b[n] && b[n].d !== a[n].d;
     });
     el('verdiff').innerHTML =
-      '<p style="margin:0">3.7 and 5.0 ship a byte-identical monster table (the only ' +
+      '<p style="margin-bottom:0">3.7 and 5.0 ship a byte-identical monster table (the only ' +
         'differences are comments and the version stamp), so they share one dataset here. ' +
         'Against 3.6:</p>' +
-      '<p style="margin:0"><strong>' + added.length + ' names appear that 3.6 does not have</strong> — ' +
+      '<p style="margin-bottom:0"><strong>' + added.length + ' names appear that 3.6 does not have</strong> — ' +
         esc(added.join(', ')) + '. Some are genuinely new monsters (gold dragon, ' +
         'displacer beast, genetic engineer); most are renames of the ' + gone.length +
         ' names 3.6 has and 3.7 does not: ' + esc(gone.join(', ')) + '.</p>' +
-      '<p style="margin:0"><strong>' + diffChanged.length + ' monsters changed difficulty</strong>: ' +
+      '<p style="margin-bottom:0"><strong>' + diffChanged.length + ' monsters changed difficulty</strong>: ' +
         diffChanged.map(function (n) {
           return esc(n) + ' ' + a[n].d + '&rarr;' + b[n].d;
         }).join(', ') + '.</p>' +
-      '<p style="margin:0">Three monsters — <strong>horned devil</strong>, ' +
+      '<p style="margin-bottom:0">Three monsters — <strong>horned devil</strong>, ' +
         '<strong>erinys</strong> and <strong>barbed devil</strong> — carry ' +
         '<code>G_HELL</code> and a positive alignment in every version, which means ' +
         '<code>rndmonst()</code> can never produce them: outside Gehennom ' +

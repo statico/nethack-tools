@@ -40,7 +40,7 @@
   }
   .preview .tty { font-size: 12px; }
   .mapwrap { display: flex; justify-content: center; }
-  .mapwrap .tty { font-size: 20px; line-height: 1.05; padding: calc(var(--step) * 4); }
+  .mapwrap .tty { font-size: 16px; line-height: 1.05; padding: calc(var(--step) * 3); }
 
   /* Legend -------------------------------------------------------------- */
   .legend { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 2) calc(var(--step) * 5); font-size: 12px; }
@@ -52,10 +52,16 @@
   #detail:focus-visible { outline: 2px solid hsl(var(--frost-2)); outline-offset: 2px; }
   .detail-cols { display: grid; gap: calc(var(--step) * 5); grid-template-columns: minmax(0, 1fr); }
   @media (min-width: 900px) {
-    /* Give the map real estate rather than shrinking it to max-content, which
-       left it stranded in a narrow column with dead space underneath. */
-    .detail-cols { grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1fr); }
+    /* The video is the column that benefits from width — a 16:9 embed gains
+       height with every pixel, while the map is legible well before it fills
+       its column. So the notes/video side gets the larger share. */
+    .detail-cols { grid-template-columns: minmax(0, 0.65fr) minmax(0, 1.35fr); }
   }
+
+  /* Flip controls repeated inside the detail panel, so you can re-orient
+     without scrolling back up to the Orientation card. */
+  .flip-row { gap: calc(var(--step) * 2); align-items: center; }
+  .flip-row .label { margin-right: calc(var(--step) * 1); }
 
   /* YouTube facade ------------------------------------------------------ */
   .yt {
@@ -80,6 +86,18 @@
   }
   .yt-facade:hover .yt-play { background: hsl(var(--frost-2)); color: hsl(var(--surface-0)); }
   .yt iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+  /* Mirror the video to match the flip toggles. The map is flipped as grid
+     data — a video can only be flipped as pixels, so this is the one place a
+     CSS transform is the right tool.
+
+     Only the media is transformed, not .yt itself: the play overlay is a
+     sibling of the <img>, so it keeps pointing right instead of becoming a
+     backwards triangle. */
+  .yt.mirror-h .yt-facade img, .yt.mirror-h iframe { transform: scaleX(-1); }
+  .yt.mirror-v .yt-facade img, .yt.mirror-v iframe { transform: scaleY(-1); }
+  .yt.mirror-h.mirror-v .yt-facade img,
+  .yt.mirror-h.mirror-v iframe { transform: scale(-1, -1); }
 
   .strat { margin: 0; padding-left: calc(var(--step) * 5); }
   .strat li { margin-bottom: calc(var(--step) * 2); color: hsl(var(--text-1)); }
@@ -136,10 +154,10 @@
     </div>
     <div class="card-bd stack">
       <div class="row">
-        <button type="button" class="btn" id="flipH" aria-pressed="false">Flip H</button>
-        <button type="button" class="btn" id="flipV" aria-pressed="false">Flip V</button>
-        <button type="button" class="btn" id="flipReset">Reset</button>
-        <span class="dim small" id="flipState">Original orientation</span>
+        <button type="button" class="btn" data-flip="h" aria-pressed="false">Flip H</button>
+        <button type="button" class="btn" data-flip="v" aria-pressed="false">Flip V</button>
+        <button type="button" class="btn" data-flip="reset">Reset</button>
+        <span class="dim small flip-state">Original orientation</span>
       </div>
       <div class="note note-warn">
         NetHack 3.7 and 5.0 may mirror each Sokoban level horizontally, vertically, or both when the level is created,
@@ -154,7 +172,9 @@
         <span><b class="g-stair">&lt; &gt;</b> stairs</span>
         <span><b class="g-door">+</b> door</span>
       </div>
-      <p class="dim small" style="margin:0">
+      <!-- margin-bottom only: a bare margin:0 would also cancel the margin-top
+           that .stack uses to space its children. -->
+      <p class="dim small" style="margin-bottom:0">
         Rolling-boulder traps are drawn as plain floor, not <code>^</code> &mdash; they stay hidden on a premapped level.
       </p>
     </div>
@@ -233,16 +253,15 @@
     '+': 'g-door'
   };
 
-  var state = { levels: [], h: false, v: false, open: null };
+  // mirrorVid: whether the walkthrough video follows the flip toggles. On by
+  // default — it is the point of the feature — but escapable, because a
+  // mirrored YouTube player has a mirrored control bar too.
+  var state = { levels: [], h: false, v: false, open: null, mirrorVid: true };
 
   var elGrid   = document.getElementById('grid');
   var elDetail = document.getElementById('detail');
   var elCount  = document.getElementById('levelCount');
   var elGen    = document.getElementById('gen');
-  var btnH     = document.getElementById('flipH');
-  var btnV     = document.getElementById('flipV');
-  var btnReset = document.getElementById('flipReset');
-  var elFlipState = document.getElementById('flipState');
 
   /* -- helpers ---------------------------------------------------------- */
 
@@ -336,13 +355,76 @@
     fitMaps();
   }
 
+  /* -- flip controls ----------------------------------------------------- */
+
+  // Rendered in two places (the Orientation card and the detail panel) and
+  // driven by delegation, so there is one behaviour rather than two copies.
+  function flipRowHtml() {
+    function b(key, text) {
+      var pressed = key === 'reset' ? ''
+        : ' aria-pressed="' + (key === 'h' ? state.h : state.v) + '"';
+      return '<button type="button" class="btn" data-flip="' + key + '"' + pressed + '>' +
+             text + '</button>';
+    }
+    return '<div class="row flip-row">' +
+             '<span class="label">Orientation</span>' +
+             b('h', 'Flip H') + b('v', 'Flip V') + b('reset', 'Reset') +
+             '<span class="dim small flip-state"></span>' +
+           '</div>';
+  }
+
+  function flipWords() {
+    if (!state.h && !state.v) return 'Original orientation';
+    return 'Mirrored ' + [state.h ? 'horizontally' : null, state.v ? 'vertically' : null]
+      .filter(Boolean).join(' + ');
+  }
+
+  // Push state onto every flip control on the page, wherever it lives.
+  function syncFlips() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-flip]'), function (b) {
+      var k = b.getAttribute('data-flip');
+      if (k !== 'reset') b.setAttribute('aria-pressed', String(k === 'h' ? state.h : state.v));
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.flip-state'), function (s) {
+      s.textContent = flipWords();
+    });
+  }
+
+  /* -- video mirroring --------------------------------------------------- */
+
+  function mirrorClass() {
+    if (!state.mirrorVid) return '';
+    return (state.h ? ' mirror-h' : '') + (state.v ? ' mirror-v' : '');
+  }
+
+  // Always emitted, hidden while there is nothing to mirror against, so
+  // applyMirror() can reveal it without re-rendering the video zone.
+  function mirrorToggleHtml() {
+    return '<button type="button" class="btn" id="ytMirror"' +
+           (state.h || state.v ? '' : ' hidden') +
+           ' aria-pressed="' + state.mirrorVid + '">' +
+           (state.mirrorVid ? 'Unmirror video' : 'Mirror video') + '</button>';
+  }
+
+  // Class swap only — never re-render, or a playing iframe would restart.
+  function applyMirror() {
+    var box = document.getElementById('yt');
+    if (box) box.className = 'yt' + mirrorClass();
+    var btn = document.getElementById('ytMirror');
+    if (btn) {
+      btn.hidden = !state.h && !state.v;
+      btn.setAttribute('aria-pressed', String(state.mirrorVid));
+      btn.textContent = state.mirrorVid ? 'Unmirror video' : 'Mirror video';
+    }
+  }
+
   // Facade only — no <iframe> is ever emitted here. The iframe is created in
   // startVideo(), on user activation.
   function ytHtml(lvl) {
     var id = lvl.youtube;
     if (!id) return '<div class="empty">No walkthrough video for this level.</div>';
     return '' +
-      '<div class="yt" id="yt" data-video="' + esc(id) + '">' +
+      '<div class="yt' + mirrorClass() + '" id="yt" data-video="' + esc(id) + '">' +
         '<button type="button" class="yt-facade" id="ytPlay">' +
           '<img src="https://img.youtube.com/vi/' + esc(id) + '/hqdefault.jpg" alt="" loading="lazy" ' +
                'width="480" height="360">' +
@@ -352,6 +434,7 @@
       '</div>' +
       '<div class="row" style="margin-top:calc(var(--step)*2)">' +
         '<button type="button" class="btn btn-danger" id="ytStop" hidden>Stop video</button>' +
+        mirrorToggleHtml() +
         '<a class="small" href="https://www.youtube.com/watch?v=' + esc(id) + '" target="_blank" rel="noopener">' +
           'Watch on youtube.com &#8599;</a>' +
       '</div>' +
@@ -368,6 +451,11 @@
     if (play) play.addEventListener('click', startVideo);
     var stop = document.getElementById('ytStop');
     if (stop) stop.addEventListener('click', stopVideo);
+    var mir = document.getElementById('ytMirror');
+    if (mir) mir.addEventListener('click', function () {
+      state.mirrorVid = !state.mirrorVid;
+      applyMirror();
+    });
   }
 
   function orientationNote() {
@@ -404,8 +492,9 @@
       '<div class="card-bd">' +
         '<div class="detail-cols">' +
           '<div class="stack">' +
+            flipRowHtml() +
             '<div class="mapwrap"><div class="tty">' + colorMap(viewMap(lvl)) + '</div></div>' +
-            orientationNote() +
+            '<div id="orientNote">' + orientationNote() + '</div>' +
           '</div>' +
           '<div class="stack">' +
             '<div class="row">' +
@@ -414,7 +503,9 @@
               '<span class="badge ' + (spare > 0 ? 'b-green' : 'b-red') + '">' + spare + ' spare</span>' +
               '<span class="badge b-dim">' + esc(lvl.source_file) + '</span>' +
             '</div>' +
-            '<p class="mid" style="margin:0">' + esc(lvl.notes) + '</p>' +
+            // No margin:0 here — .stack spaces its children with margin-top,
+            // so zeroing the margin welds the notes to the badges above.
+            '<p class="mid">' + esc(lvl.notes) + '</p>' +
             floorFourNote(lvl) +
             '<div>' +
               '<div class="label" style="margin-bottom:calc(var(--step)*2)">Walkthrough</div>' +
@@ -435,6 +526,7 @@
     });
 
     bindVideo();
+    syncFlips();
     fitMaps();
   }
 
@@ -514,7 +606,7 @@
     Array.prototype.forEach.call(maps, function (m) {
       var box = m.parentNode;
       var inPreview = box.classList.contains('preview');
-      var maxPx = inPreview ? 15 : 30;   // don't blow small maps up absurdly
+      var maxPx = inPreview ? 15 : 20;   // don't blow small maps up absurdly
       var minPx = 12;                    // site-wide floor; never go below it
 
       m.style.fontSize = '';             // reset so we measure the CSS default
@@ -536,22 +628,31 @@
     fitPending = setTimeout(fitMaps, 120);
   });
 
+  // Patches the open detail panel in place rather than calling renderDetail():
+  // a re-render would drop a playing iframe and restart the walkthrough.
   function applyFlips() {
-    btnH.setAttribute('aria-pressed', String(state.h));
-    btnV.setAttribute('aria-pressed', String(state.v));
-    elFlipState.textContent = !state.h && !state.v ? 'Original orientation'
-      : 'Mirrored ' + [state.h ? 'horizontally' : null, state.v ? 'vertically' : null]
-          .filter(Boolean).join(' + ');
+    syncFlips();
     renderGrid();
-    if (state.open) {
-      var lvl = state.levels.filter(function (l) { return l.id === state.open; })[0];
-      if (lvl) renderDetail(lvl);
-    }
+
+    var lvl = currentLevel();
+    if (!lvl) return;
+    var map = elDetail.querySelector('.mapwrap .tty');
+    if (map) map.innerHTML = colorMap(viewMap(lvl));
+    var note = document.getElementById('orientNote');
+    if (note) note.innerHTML = orientationNote();
+    applyMirror();
+    fitMaps();
   }
 
-  btnH.addEventListener('click', function () { state.h = !state.h; applyFlips(); });
-  btnV.addEventListener('click', function () { state.v = !state.v; applyFlips(); });
-  btnReset.addEventListener('click', function () { state.h = false; state.v = false; applyFlips(); });
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('[data-flip]') : null;
+    if (!btn) return;
+    var key = btn.getAttribute('data-flip');
+    if (key === 'h') state.h = !state.h;
+    else if (key === 'v') state.v = !state.v;
+    else { state.h = false; state.v = false; }
+    applyFlips();
+  });
 
   elGrid.addEventListener('click', function (e) {
     var btn = e.target.closest ? e.target.closest('button.lvl') : null;

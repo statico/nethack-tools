@@ -125,6 +125,11 @@ code, kbd, pre { font-family: var(--mono); }
 
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 calc(var(--step) * 6); }
 .stack > * + * { margin-top: calc(var(--step) * 4); }
+/* .stack spaces children with margin-top, so a `gap` set on it does nothing —
+   and a child carrying its own `margin: 0` cancels the spacing entirely. Use
+   .stack-tight where the spacing must survive that: a real flex column, where
+   gap applies and no child margin can override it. */
+.stack-tight { display: flex; flex-direction: column; gap: calc(var(--step) * 2); }
 /* padding-block, not shorthand: .page and .wrap sit on the same element, and a
    `padding: N 0` shorthand here would win on source order and wipe out .wrap's
    horizontal gutter, leaving content flush to the viewport edge below --maxw. */
@@ -256,6 +261,18 @@ button:focus-visible, [tabindex]:focus-visible {
 }
 textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
 input.big { font-size: 20px; font-weight: 600; color: hsl(var(--frost-2)); }
+
+/* WebKit hides the number spinners until hover or focus, which makes them
+   undiscoverable — these are step-by-one values people nudge, so keep the
+   arrows on screen. `color-scheme` (set per theme at the top) is what makes
+   them render dark rather than as a light-mode artifact. */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  opacity: 1;
+  height: auto;
+}
+/* Firefox hides them for inputs it thinks are text-ish; ask explicitly. */
+input[type='number'] { -moz-appearance: number-input; }
 
 /* Native checkbox, Nord-tinted — keeps a11y semantics intact */
 input[type='checkbox'] {
