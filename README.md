@@ -7,6 +7,12 @@ Player tools for [NetHack](https://www.nethack.org/) 3.6, 3.7 and 5.0.
 - **Contact:** `@statico` on Discord — bug reports and corrections welcome, especially if
   you can point at the line of C that proves me wrong.
 
+Also by me: the [NetHack Tiles Client](https://github.com/statico/nethack-tiles-client), a
+desktop app for macOS, Windows and Linux that logs into nethack.alt.org or hardfought.org
+over SSH and renders the game with tiles instead of ASCII. It's linked from the home page —
+as its own block rather than a seventh card in the tools grid, since it isn't part of this
+site and the grid is pinned to three across.
+
 > [!NOTE]
 > This was mostly vibe coded with [Claude Code](https://claude.com/claude-code) and Opus,
 > using the NetHack source and [NetHackWiki](https://nethackwiki.com/) as reference.

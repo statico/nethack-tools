@@ -34,6 +34,24 @@
   .grid.tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   @media (max-width: 800px) { .grid.tools { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 540px) { .grid.tools { grid-template-columns: minmax(0, 1fr); } }
+  /* The tiles client isn't one of the tools on this site — it's a separate
+     desktop app — so it gets its own full-width block instead of a seventh
+     card, which would leave the 3-across grid with a ragged second row. */
+  .plug { display: block; text-decoration: none; color: inherit; }
+  .plug:hover { text-decoration: none; }
+  .plug h2 { color: hsl(var(--green)); }
+  .plug .card-bd {
+    display: flex; flex-wrap: wrap; align-items: center;
+    justify-content: space-between; gap: calc(var(--step) * 4);
+  }
+  /* Grow into the row rather than sitting at its flex-basis width, so the
+     copy doesn't wrap into a narrow column with dead space beside it. */
+  .plug p { flex: 1 1 320px; margin: 0; max-width: 78ch; color: hsl(var(--text-1)); font-size: 12px; line-height: 1.65; }
+  .plug .go {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: hsl(var(--text-2)); white-space: nowrap;
+  }
+  .plug:hover .go { color: hsl(var(--green)); }
 </style>
 </head>
 <body>
@@ -170,6 +188,22 @@
     </a>
 
   </div>
+
+  <a class="card card-glow plug" href="https://github.com/statico/nethack-tiles-client" rel="noopener">
+    <div class="card-hd">
+      <h2>NetHack Tiles Client</h2>
+      <span class="badge b-green">Desktop app</span>
+    </div>
+    <div class="card-bd">
+      <p>
+        Want to play on <strong>nethack.alt.org</strong> or <strong>hardfought.org</strong>
+        with tiles? This is a desktop client for macOS, Windows and Linux that logs into the
+        public servers over SSH and draws the game with a tileset instead of ASCII. Same
+        server, same game, same scoreboard &mdash; it just isn&#39;t a terminal.
+      </p>
+      <span class="go">Get the client &rarr;</span>
+    </div>
+  </a>
 
   <div class="note">
     Data is generated directly from the
