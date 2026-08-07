@@ -1385,7 +1385,7 @@
         "5.0": {
           "status": "present",
           "file": "src/weapon.c",
-          "line": 77,
+          "line": 78,
           "literal": "You_feel(\"more confident in your %sskills.\", ... \"weapon \" ...)"
         }
       }
@@ -1402,7 +1402,7 @@
         "5.0": {
           "status": "present",
           "file": "src/weapon.c",
-          "line": 77,
+          "line": 78,
           "literal": "You_feel(\"more confident in your %sskills.\", ... \"spell casting \" ...)"
         }
       }
@@ -1419,7 +1419,7 @@
         "5.0": {
           "status": "present",
           "file": "src/weapon.c",
-          "line": 77,
+          "line": 78,
           "literal": "You_feel(\"more confident in your %sskills.\", ... \"fighting \" ...)"
         }
       }
@@ -1436,7 +1436,7 @@
         "5.0": {
           "status": "present",
           "file": "src/weapon.c",
-          "line": 77,
+          "line": 78,
           "literal": "You_feel(\"more confident in your %sskills.\", ... \"\" ...)"
         }
       }
@@ -2943,13 +2943,13 @@
         "3.7": {
           "status": "present",
           "file": "src/sit.c",
-          "line": 583,
+          "line": 585,
           "literal": "feel a malignant aura surround %s. (You(mal_aura, \"you\"))"
         },
         "5.0": {
           "status": "present",
           "file": "src/sit.c",
-          "line": 583,
+          "line": 585,
           "literal": "feel a malignant aura surround %s. (You(mal_aura, \"you\"))"
         }
       }
@@ -3889,12 +3889,16 @@
       "id": "you-hear-025",
       "versions": {
         "3.7": {
-          "status": "absent",
-          "note": "Searched src/ and whole repo for 'chewing' (quoted strings), 'You_hear' calls in eat.c/dog.c/mon.c/hack.c; only found unrelated comments ('chewing satisfaction', 'chewing on the wall') and a different message 'a masticating sound.' (mon.c) used for monsters eating corpses out of sight. No 'You hear chewing.' call site exists."
+          "status": "present",
+          "file": "src/muse.c",
+          "line": 2935,
+          "literal": "You_hear(\"%s.\", (obj->oclass == POTION_CLASS) ? \"drinking\" : \"chewing\");"
         },
         "5.0": {
-          "status": "absent",
-          "note": "Same search repeated against origin/NetHack-5.0 with identical results: no 'You hear chewing.' call site found; only the unrelated 'a masticating sound.' message exists for out-of-sight corpse eating."
+          "status": "present",
+          "file": "src/muse.c",
+          "line": 2935,
+          "literal": "You_hear(\"%s.\", (obj->oclass == POTION_CLASS) ? \"drinking\" : \"chewing\");"
         }
       }
     },
@@ -4036,13 +4040,13 @@
         "3.7": {
           "status": "present",
           "file": "src/sounds.c",
-          "line": 214,
+          "line": 215,
           "literal": "bubbling water."
         },
         "5.0": {
           "status": "present",
           "file": "src/sounds.c",
-          "line": 214,
+          "line": 215,
           "literal": "bubbling water."
         }
       }
@@ -4823,13 +4827,13 @@
         "3.7": {
           "status": "present",
           "file": "src/read.c",
-          "line": 1481,
+          "line": 1482,
           "literal": "%s %s. (\"maniacal laughter\" / \"close by\")"
         },
         "5.0": {
           "status": "present",
           "file": "src/read.c",
-          "line": 1482,
+          "line": 1483,
           "literal": "%s %s. (\"maniacal laughter\" / \"close by\")"
         }
       }
@@ -5094,15 +5098,15 @@
       "versions": {
         "3.7": {
           "status": "present",
-          "file": "src/worn.c",
-          "line": 1199,
-          "literal": "You_hear(\"a cracking sound.\");"
+          "file": "src/zap.c",
+          "line": 5291,
+          "literal": "You_hear(\"a crackling sound.\");"
         },
         "5.0": {
           "status": "present",
-          "file": "src/worn.c",
-          "line": 1199,
-          "literal": "You_hear(\"a cracking sound.\");"
+          "file": "src/zap.c",
+          "line": 5305,
+          "literal": "You_hear(\"a crackling sound.\");"
         }
       }
     },

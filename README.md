@@ -124,16 +124,21 @@ is shown until you start typing.
 
 - **302 messages scraped from the wiki's [You feel](https://nethackwiki.com/wiki/You_feel) and
   [You hear](https://nethackwiki.com/wiki/You_hear) articles**, each one then handed to a subagent
-  that grepped `NetHack-3.7-testing` and `NetHack-5.0` for the literal C string producing it,
-  recording the exact `file:line` on a match.
+  that grepped `NetHack-3.7` and `NetHack-5.0` for the literal C string producing it, recording the
+  exact `file:line` on a match.
 - **190 more messages found the other way**: a source sweep read every `You_feel()`/`You_hear()`
-  call site in 5.0 and kept the ones with no matching wiki article. Those carry a 5.0 citation but
-  no 3.7 status — 5.0's source alone can't answer whether the message also exists in 3.7.
-- **Honest verification coverage, not a claim of completeness.** Of the 492 total: 3.7 is 295
-  confirmed present, 4 confirmed absent (the wiki's wording doesn't match anything in the source —
-  shown with the closest text that *was* found), and 193 unverified (mostly the 5.0-only sweep
-  entries, plus a handful the search genuinely couldn't resolve either way). 5.0 is 485 present, 4
-  absent, 3 unverified. Every row shows its status per version rather than a single pass/fail.
+  call site in 5.0 and kept the ones with no matching wiki article.
+- **3.7 backfilled deterministically.** The reverse sweep only reads 5.0, but a 5.0 citation hands
+  over the exact C string literal, and finding that literal in the 3.7 tree is a plain search —
+  `backfill_3_7()` in `gen-messages.py` does it, resolving 188 of those 190 against 3.7. Same file
+  and nearest line wins when a literal appears at several call sites; ambiguous across files stays
+  unverified rather than guessed.
+- **Honest verification coverage, not a claim of completeness.** Of the 492 total: 3.7 is 484
+  confirmed present, 3 confirmed absent (the wiki's wording doesn't match anything in the source —
+  shown with the closest text that *was* found), and 5 unverified. 5.0 is 486 present, 3 absent, 3
+  unverified. Unverified means the call site is pure format strings with no literal to search for,
+  not that the message is missing. Every row shows its status per version rather than a single
+  pass/fail.
 
 ### [Checklist](https://nethack.statico.io/checklist)
 
@@ -210,7 +215,9 @@ python3 scripts/gen-wish.py        # -> data/wish.json
 python3 scripts/gen-monsters.py    # -> data/monsters.json
 python3 scripts/gen-dungeon.py     # -> data/dungeon.json
 python3 scripts/gen-messages.py    # -> data/messages.json (needs messages-verification.json)
+python3 scripts/gen-og-images.py   # -> assets/og/*.png (social cards; needs ImageMagick)
 python3 scripts/check-links.py     # validates every wiki link target
+python3 scripts/gen-og-images.py --check   # every page has a social card
 
 node scripts/test-prices.mjs       # 44 pricing assertions
 node scripts/test-wish.mjs         # 135 wish-rule assertions
@@ -224,6 +231,11 @@ breaks the build loudly instead of silently producing stale numbers.
 
 `data/checklist.json` is authored by hand, not generated — but its link targets are
 validated like everything else.
+
+`scripts/gen-og-images.py` reads each page's own `<title>` and `og:description` to draw its
+1200×630 card, so the card can't drift from the page it represents — edit the page's metadata
+and re-run it. Cards are drawn with ImageMagick's drawing commands rather than SVG, since the
+usual `rsvg` delegate isn't assumed to be installed.
 
 `scripts/gen-messages.py` is the odd one out: locating each message's C source line is
 unbounded reading, not a pattern match, so that half is done by fanned-out agents and checked

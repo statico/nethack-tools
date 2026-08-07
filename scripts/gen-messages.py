@@ -6,16 +6,20 @@ of {{message|text|explanation}} entries grouped under == headings ==. Every entr
 a hand-written explanation and wikilinks, which is what makes these two pages usable as a
 lookup tool instead of a raw grep over 16k source string literals.
 
-This script only does the deterministic half: parse the wiki markup into structured entries,
-normalize it to HTML, and merge in a source-verification sidecar. It does NOT talk to the
-NetHack source itself beyond reading the pinned commit hash of each branch — locating each
-message's emitting call site in NetHack-3.7 and NetHack-5.0 is unbounded reading of C control
-flow around format strings ("%s slurping sound%s." needs the singular/plural call sites both
-found), which is why that step is done by fanned-out agents and handed to this script as
+This script does the deterministic half: parse the wiki markup into structured entries,
+normalize it to HTML, and merge in a source-verification sidecar. *Finding* a message's
+emitting call site from its wiki wording is unbounded reading of C control flow around format
+strings ("%s slurping sound%s." needs the singular/plural call sites both found), which is why
+that step is done by fanned-out agents and handed to this script as
 scripts/messages-verification.json: a flat list of {id, versions} objects (forward
 verification, keyed to --extract-only's output) plus, for messages found by sweeping the
 source for You_feel()/You_hear() call sites with no matching wiki entry, full new entries
 carrying their own {id, prefix, text, explanation_html, versions}.
+
+Once a call site *is* known in one branch, though, checking the other branch for it stops
+being open-ended: the 5.0 citation hands us the exact C string literal, and locating that
+literal in 3.7 is a plain search. backfill_3_7() does that pass, which is what keeps the
+5.0-only reverse sweep from leaving ~190 entries permanently "unverified" for 3.7.
 
 Usage:
     python3 scripts/gen-messages.py --extract-only   # dump raw entries, no verification needed
@@ -81,6 +85,124 @@ def git_head(ref):
     return subprocess.run(
         ["git", "-C", NETHACK, "rev-parse", ref], check=True, capture_output=True, text=True
     ).stdout.strip()
+
+
+# --------------------------------------------------------------------------- source tree access
+_tree_cache = {}
+
+
+def source_tree(branch):
+    """{path: [lines]} for every src/*.c and include/*.h at the pinned commit of `branch`.
+    Read out of git rather than the working tree so a build never depends on which branch
+    happens to be checked out."""
+    if branch in _tree_cache:
+        return _tree_cache[branch]
+    ref = BRANCHES[branch]
+    names = subprocess.run(
+        ["git", "-C", NETHACK, "ls-tree", "-r", "--name-only", ref],
+        check=True, capture_output=True, text=True,
+    ).stdout.split("\n")
+    wanted = [n for n in names if re.fullmatch(r"(src/.*\.c|include/.*\.h)", n)]
+    tree = {}
+    for name in wanted:
+        blob = subprocess.run(
+            ["git", "-C", NETHACK, "show", f"{ref}:{name}"],
+            check=True, capture_output=True, text=True, errors="replace",
+        ).stdout
+        tree[name] = blob.split("\n")
+    _tree_cache[branch] = tree
+    return tree
+
+
+C_STRING_RE = re.compile(r'"((?:[^"\\]|\\.)*)"')
+
+
+def _wordiness(q):
+    """Letters left once printf specifiers are removed, used to rank candidates by how much
+    actual prose they carry. "%s %s." scores 0 and can locate nothing; "slower." scores 6;
+    "less %s!" scores 4 and is still perfectly locatable, since the specifier is searched
+    for literally too. The acceptance bar is deliberately low — find_literal()'s
+    ambiguous-across-files guard is what actually keeps a vague candidate from matching the
+    wrong call site."""
+    return len(re.sub(r"[^a-zA-Z]", "", re.sub(r"%[-0-9.]*[a-zA-Z]", "", q)))
+
+
+def call_site_literals(branch, path, line):
+    """Usable C string literals on the cited line and the two continuation lines after it,
+    most distinctive first. A multi-line call like
+        You_hear("%s %s.", (confused || scursed) ? "sad wailing"
+                 : "maniacal laughter", ...);
+    keeps its best literal off the first line, so don't stop at line 1 — and return all of
+    them rather than just the best, because the wordiest one is not always the one that
+    survives into the other branch."""
+    tree = source_tree(branch)
+    src = tree.get(path)
+    if not src or not (1 <= line <= len(src)):
+        return []
+    quoted = []
+    for i in range(line - 1, min(len(src), line + 2)):
+        for q in C_STRING_RE.findall(src[i]):
+            if _wordiness(q) >= 3 and q not in quoted:
+                quoted.append(q)
+    return sorted(quoted, key=_wordiness, reverse=True)
+
+
+def find_literal(branch, literal, prefer_file=None, near_line=None):
+    """(path, line) of `literal` in `branch`, or None. Prefers the file the other branch
+    put it in — the same string can legitimately appear at several call sites (e.g. two
+    "an explosion" sites), and the sibling branch's file is by far the best tiebreaker."""
+    tree = source_tree(branch)
+    hits = []
+    for path, src in tree.items():
+        for i, text in enumerate(src):
+            if literal in text:
+                hits.append((path, i + 1))
+    if not hits:
+        return None
+    same = [h for h in hits if h[0] == prefer_file]
+    if same:
+        if near_line is not None:
+            return min(same, key=lambda h: abs(h[1] - near_line))
+        return same[0]
+    if len({h[0] for h in hits}) == 1:
+        return hits[0]
+    return None  # ambiguous across files with no hint from the other branch; stay unverified
+
+
+def backfill_3_7(entries):
+    """Resolve entries left 'unverified' for 3.7 by looking up their 5.0 call site's string
+    literal in the 3.7 tree. Only ever promotes unverified -> present; a miss is left alone
+    rather than downgraded to 'absent', since not finding the literal here means the search
+    was inconclusive, not that the message is known to be gone."""
+    filled = missed = 0
+    for e in entries:
+        v37 = e.get("versions", {}).get("3.7", {})
+        v50 = e.get("versions", {}).get("5.0", {})
+        if v37.get("status") != "unverified" or v50.get("status") != "present":
+            continue
+        hit = literal = None
+        for cand in call_site_literals("5.0", v50.get("file", ""), v50.get("line", 0)):
+            hit = find_literal("3.7", cand, v50.get("file"), v50.get("line"))
+            if hit:
+                literal = cand
+                break
+        if not hit:
+            missed += 1
+            v37["note"] = (
+                "not found in 3.7 by literal backfill; the 5.0 call site's string literal "
+                "could not be located unambiguously, so 3.7 remains unchecked"
+            )
+            continue
+        path, line = hit
+        e["versions"]["3.7"] = {
+            "status": "present",
+            "file": path,
+            "line": line,
+            "literal": literal,
+            "via": "literal-backfill from the 5.0 call site",
+        }
+        filled += 1
+    return filled, missed
 
 
 # --------------------------------------------------------------------------- wikitext -> HTML
@@ -396,7 +518,16 @@ def main():
     if new_entries:
         print(f"[INFO] {len(new_entries)} 5.0-only entries added from the reverse sweep")
 
-    print(f"[INFO] {unverified_count} entries have at least one unverified branch")
+    print(f"[INFO] {unverified_count} entries have at least one unverified branch "
+          "before the 3.7 backfill")
+    filled, missed = backfill_3_7(entries)
+    print(f"[INFO] 3.7 backfill resolved {filled} entries by literal lookup, "
+          f"{missed} left unverified")
+
+    still_unverified = sum(
+        1 for e in entries if any(i["status"] == "unverified" for i in e["versions"].values())
+    )
+    print(f"[INFO] {still_unverified} entries still have an unverified branch")
 
     doc = {
         "generated_from": {

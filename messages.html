@@ -2,11 +2,23 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Message Lookup — statico's NetHack Tools</title>
-<meta name="description" content="Search every &quot;You feel...&quot; and &quot;You hear...&quot; message in NetHack, with the exact source line that produces it and a verified/unverified badge for 3.7 and 5.0.">
+<meta name="description" content="Search every &quot;You feel...&quot; and &quot;You hear...&quot; message in NetHack, with the exact source line that produces it and a present/absent/unverified badge for 3.7 and 5.0.">
 <link rel="canonical" href="https://nethack.statico.io/messages">
 <meta property="og:title" content="Message Lookup — statico&#39;s NetHack Tools">
-<meta property="og:description" content="Search every &quot;You feel...&quot; and &quot;You hear...&quot; message in NetHack, with the source line and a verified/unverified badge for 3.7 and 5.0.">
+<meta property="og:description" content="Search every &quot;You feel...&quot; and &quot;You hear...&quot; message in NetHack, with the source line and a present/absent/unverified badge for 3.7 and 5.0.">
 <meta property="og:url" content="https://nethack.statico.io/messages"><meta property="og:type" content="website">
+<meta property="og:site_name" content="statico&#39;s NetHack Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://nethack.statico.io/assets/og/messages.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Message Lookup — statico&#x27;s NetHack Tools — social card for https://nethack.statico.io">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Message Lookup — statico&#39;s NetHack Tools">
+<meta name="twitter:description" content="Search every &quot;You feel...&quot; and &quot;You hear...&quot; message in NetHack, with the source line and a present/absent/unverified badge for 3.7 and 5.0.">
+<meta name="twitter:image" content="https://nethack.statico.io/assets/og/messages.png">
+<meta name="twitter:image:alt" content="Message Lookup — statico&#x27;s NetHack Tools — social card for https://nethack.statico.io">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/smui.css">
 <script src="/assets/theme.js"></script>
@@ -104,13 +116,19 @@
             <code>{{message|text|explanation}}</code> templates. That gives the message text, its
             wiki-written explanation, and every wikilink inside that explanation.</p>
           <p style="margin-bottom:0">Every one of those wiki-sourced messages was then handed to a
-            fleet of subagents that grepped the actual <code>NetHack-3.7-testing</code> and
+            fleet of subagents that grepped the actual <code>NetHack-3.7</code> and
             <code>NetHack-5.0</code> branches for the literal C string that produces it, recording the
             exact <code>file:line</code> when found. A second sweep went the other direction: it read
             every <code>You_feel()</code>/<code>You_hear()</code> call site in 5.0's source and flagged
             ones that don't correspond to any wiki-documented message at all &mdash; those are marked
-            &ldquo;5.0-only, not on the wiki&rdquo; and carry no 3.7 verification, since the point of
-            that sweep was coverage 5.0's source gives no way to check 3.7 by itself.</p>
+            &ldquo;5.0-only, not on the wiki&rdquo;.</p>
+          <p style="margin-bottom:0">That reverse sweep can only speak for 5.0, so a final
+            deterministic pass in <code>gen-messages.py</code> closes the gap: once a call site is
+            known in 5.0, its exact C string literal is known too, and looking that literal up in the
+            3.7 tree is a plain search rather than an open-ended read. Where the same literal appears
+            at several call sites, the one in the same file and nearest the 5.0 line wins; where it's
+            ambiguous across files, the entry is left unverified rather than guessed at. That pass
+            resolves 188 of the 190 sweep entries against 3.7.</p>
         </div>
       </details>
       <details>
@@ -121,9 +139,11 @@
             was found in that branch; the <code>file:line</code> and literal C string are shown.
             <span class="badge b-red">absent</span> &mdash; the wiki's wording was searched for and not
             found; the closest source text found instead is noted, in case the wiki is simply out of
-            date rather than wrong. <span class="badge b-yellow">unverified</span> &mdash; not checked
-            (the 5.0-only sweep never touches 3.7), or an exhaustive search came up empty without
-            turning up anything close enough to call it absent with confidence.
+            date rather than wrong. <span class="badge b-yellow">unverified</span> &mdash; the search
+            was inconclusive, not that the message is known to be missing: the call site is built
+            entirely from format strings (<code>You_feel("%s!", abil-&gt;gainstr)</code> carries no
+            literal to look up), or the literal it does carry appears at too many call sites to pick
+            one. Unverified means unknown, and only five entries are still in that state.
           </p>
           <p id="stats-note" style="margin-bottom:0"></p>
         </div>

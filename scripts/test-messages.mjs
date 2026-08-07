@@ -62,12 +62,36 @@ check('every "present" version carries file/line/literal',
   true);
 
 const reverse = ENTRIES.filter((e) => e.source_page === null);
-check('reverse-sweep entries (not on the wiki) all carry a 3.7-unverified, 5.0-present pair',
-  reverse.length > 0 &&
-  reverse.every((e) =>
-    e.versions['3.7'].status === 'unverified' && e.versions['5.0'].status === 'present'),
+check('reverse-sweep entries (not on the wiki) are all 5.0-present',
+  reverse.length > 0 && reverse.every((e) => e.versions['5.0'].status === 'present'),
   true,
   `${reverse.length} reverse-sweep entries`);
+
+/* The sweep only reads 5.0, so its entries start out 3.7-unverified; backfill_3_7()
+   then resolves them by looking up the 5.0 call site's literal in the 3.7 tree. A
+   sweep entry may therefore be 3.7-present or 3.7-unverified, but never 3.7-absent —
+   failing to find the literal means the search was inconclusive, not that the message
+   is known to be missing, and conflating those is exactly the bug this guards. */
+check('the 3.7 backfill never marks a reverse-sweep entry absent',
+  reverse.every((e) => e.versions['3.7'].status !== 'absent'), true);
+
+const backfilled = reverse.filter((e) => e.versions['3.7'].status === 'present');
+check('the 3.7 backfill resolved the large majority of the sweep',
+  backfilled.length > reverse.length * 0.9, true,
+  `${backfilled.length}/${reverse.length} resolved against 3.7`);
+
+check('every backfilled 3.7 citation records how it was derived',
+  backfilled.every((e) => typeof e.versions['3.7'].via === 'string'), true);
+
+/* A status of "absent" is a positive claim that the message is not in that branch, so it
+   has to carry the search that justifies it — an unexplained "absent" is how "You hear
+   chewing." ended up wrongly marked missing while its own call site sat in muse.c. */
+const absent = ENTRIES.flatMap((e) => ['3.7', '5.0'].map((v) => e.versions[v]))
+  .filter((i) => i.status === 'absent');
+check('every "absent" verdict carries a note explaining the search',
+  absent.length > 0 && absent.every((i) => typeof i.note === 'string' && i.note.length > 40),
+  true,
+  `${absent.length} absent verdicts`);
 
 /* ====================================================================== */
 console.log('\n-- MessageEngine.normalize mirrors gen-messages.py norm_text() --\n');

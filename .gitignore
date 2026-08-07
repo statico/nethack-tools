@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .vercel
 node_modules/
+
+# gen-messages.py --extract-only scratch output; the checked-in artifact is
+# scripts/messages-verification.json, which is keyed to it.
+scripts/messages-raw.json
