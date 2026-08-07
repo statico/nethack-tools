@@ -32,6 +32,7 @@ DUMP = os.path.join(
 DATA_FILES = [
     "data/checklist.json",
     "data/dungeon.json",
+    "data/messages.json",
     "data/monsters.json",
     "data/wish.json",
 ]
@@ -98,6 +99,15 @@ def collect_pages(obj, path="$", out=None):
         for k, v in obj.items():
             if k == "page" and isinstance(v, str):
                 out.append((v, path))
+            elif k == "wiki_links" and isinstance(v, list):
+                for i, ln in enumerate(v):
+                    if not isinstance(ln, dict):
+                        continue
+                    title = ln.get("title")
+                    # "wikipedia:Foo"-style titles are interwiki links, not
+                    # NetHackWiki pages, so they aren't checkable against the dump.
+                    if isinstance(title, str) and not title.lower().startswith("wikipedia:"):
+                        out.append((title, "%s.wiki_links[%d]" % (path, i)))
             else:
                 collect_pages(v, "%s.%s" % (path, k), out)
     elif isinstance(obj, list):
@@ -111,17 +121,17 @@ def check_terms(data, source):
     substitution is a silent no-op. Returns a list of problem strings."""
     problems = []
 
-    def pair(text, links, path, field):
+    def pair(text, links, path, field, key="term"):
         if not isinstance(text, str) or not isinstance(links, list):
             return
         for i, ln in enumerate(links):
             if not isinstance(ln, dict):
                 continue
-            term = ln.get("term")
+            term = ln.get(key)
             if isinstance(term, str) and term not in text:
                 problems.append(
-                    "%s: %s.%s[%d] term %r not found in text %r"
-                    % (source, path, field, i, term, text)
+                    "%s: %s.%s[%d] %s %r not found in text %r"
+                    % (source, path, field, i, key, term, text)
                 )
 
     def walk(node, path):
@@ -131,6 +141,12 @@ def check_terms(data, source):
             if isinstance(body, list):
                 pair("\n".join(x for x in body if isinstance(x, str)),
                      node.get("bodyLinks"), path, "bodyLinks")
+            # wiki_links[].label is the anchor text embedded by wikitext_to_html,
+            # so it must appear in the rendered explanation_html once entities
+            # (&#x27; etc., introduced by escaping quotes/apostrophes) are undone.
+            expl = node.get("explanation_html")
+            pair(html.unescape(expl) if isinstance(expl, str) else expl,
+                 node.get("wiki_links"), path, "wiki_links", key="label")
             for k, v in node.items():
                 walk(v, "%s.%s" % (path, k))
         elif isinstance(node, list):

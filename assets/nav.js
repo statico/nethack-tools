@@ -7,6 +7,7 @@
     { href: '/wish', label: 'Wish' },
     { href: '/monsters', label: 'Monsters' },
     { href: '/dungeon', label: 'Dungeon' },
+    { href: '/messages', label: 'Messages' },
     { href: '/checklist', label: 'Checklist' },
   ];
 

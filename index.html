@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>statico's NetHack Tools</title>
-<meta name="description" content="Player tools for NetHack 3.6, 3.7 and 5.0 — price identification, a wish builder, a monster threat filter, a dungeon branch map, a Sokoban helper, and a persistent ascension checklist.">
+<meta name="description" content="Player tools for NetHack 3.6, 3.7 and 5.0 — price identification, a wish builder, a monster threat filter, a dungeon branch map, a Sokoban helper, a message lookup, and a persistent ascension checklist.">
 <link rel="canonical" href="https://nethack.statico.io/">
 <meta property="og:title" content="statico&#39;s NetHack Tools">
-<meta property="og:description" content="Price ID calculator, Sokoban helper, and ascension checklist for NetHack 3.6, 3.7 and 5.0.">
+<meta property="og:description" content="Price ID calculator, Sokoban helper, message lookup, and ascension checklist for NetHack 3.6, 3.7 and 5.0.">
 <meta property="og:url" content="https://nethack.statico.io/">
 <meta property="og:type" content="website">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -29,8 +29,9 @@
   }
   .tool:hover .go { color: hsl(var(--frost-2)); }
   .ver { display: flex; gap: calc(var(--step) * 2); flex-wrap: wrap; }
-  /* Six tools, so pin the grid to two rows of three rather than letting
-     auto-fit pack four onto the first row. Steps down to two, then one. */
+  /* Seven tools, so this is two full rows of three plus a ragged one-card
+     third row rather than letting auto-fit pack four onto the first row.
+     Steps down to two, then one. */
   .grid.tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   @media (max-width: 800px) { .grid.tools { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 540px) { .grid.tools { grid-template-columns: minmax(0, 1fr); } }
@@ -166,6 +167,26 @@
           Click any dungeon, branch or special level for its ranges, entry rules and flags.
         </p>
         <span class="go">Open map &rarr;</span>
+      </div>
+    </a>
+
+    <a class="card card-glow tool" href="/messages">
+      <div class="card-hd">
+        <h2>Message Lookup</h2>
+        <span class="badge b-dim">Reference</span>
+      </div>
+      <div class="card-bd">
+        <p>
+          Every &ldquo;You feel &hellip;&rdquo; and &ldquo;You hear &hellip;&rdquo; message, sourced
+          from the wiki and cross-checked line-by-line against the source. Nothing shows until you
+          start typing.
+        </p>
+        <p>
+          Each result carries a verified/absent/unverified badge per version, the exact
+          <code>file:line</code> when found, and a source sweep that catches 5.0 messages the wiki
+          never documented.
+        </p>
+        <span class="go">Open lookup &rarr;</span>
       </div>
     </a>
 

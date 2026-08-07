@@ -117,6 +117,24 @@ screenshot.
   hatch. Flipping while a video is playing patches the DOM in place rather than
   re-rendering, so the video keeps playing instead of restarting.
 
+### [Message Lookup](https://nethack.statico.io/messages)
+
+Search over every &ldquo;You feel &hellip;&rdquo; and &ldquo;You hear &hellip;&rdquo; message. Nothing
+is shown until you start typing.
+
+- **302 messages scraped from the wiki's [You feel](https://nethackwiki.com/wiki/You_feel) and
+  [You hear](https://nethackwiki.com/wiki/You_hear) articles**, each one then handed to a subagent
+  that grepped `NetHack-3.7-testing` and `NetHack-5.0` for the literal C string producing it,
+  recording the exact `file:line` on a match.
+- **190 more messages found the other way**: a source sweep read every `You_feel()`/`You_hear()`
+  call site in 5.0 and kept the ones with no matching wiki article. Those carry a 5.0 citation but
+  no 3.7 status — 5.0's source alone can't answer whether the message also exists in 3.7.
+- **Honest verification coverage, not a claim of completeness.** Of the 492 total: 3.7 is 295
+  confirmed present, 4 confirmed absent (the wiki's wording doesn't match anything in the source —
+  shown with the closest text that *was* found), and 193 unverified (mostly the 5.0-only sweep
+  entries, plus a handful the search genuinely couldn't resolve either way). 5.0 is 485 present, 4
+  absent, 3 unverified. Every row shows its status per version rather than a single pass/fail.
+
 ### [Checklist](https://nethack.statico.io/checklist)
 
 Goals, ascension kit, and a death log, saved to `localStorage`. Nothing is uploaded.
@@ -191,11 +209,13 @@ python3 scripts/gen-sokoban.py     # -> data/sokoban.json
 python3 scripts/gen-wish.py        # -> data/wish.json
 python3 scripts/gen-monsters.py    # -> data/monsters.json
 python3 scripts/gen-dungeon.py     # -> data/dungeon.json
+python3 scripts/gen-messages.py    # -> data/messages.json (needs messages-verification.json)
 python3 scripts/check-links.py     # validates every wiki link target
 
 node scripts/test-prices.mjs       # 44 pricing assertions
 node scripts/test-wish.mjs         # 135 wish-rule assertions
 node scripts/test-monsters.mjs     # 106 monster-table assertions
+node scripts/test-messages.mjs     # message data + search/filter engine assertions
 ```
 
 Every generator refuses to write output if its verification assertions fail. They locate
@@ -204,6 +224,12 @@ breaks the build loudly instead of silently producing stale numbers.
 
 `data/checklist.json` is authored by hand, not generated — but its link targets are
 validated like everything else.
+
+`scripts/gen-messages.py` is the odd one out: locating each message's C source line is
+unbounded reading, not a pattern match, so that half is done by fanned-out agents and checked
+in as `scripts/messages-verification.json` rather than reproduced by the script itself.
+`gen-messages.py --extract-only` regenerates the deterministic half (`messages-raw.json`, not
+checked in); the full run merges that sidecar in.
 
 ### Adding a tool
 
