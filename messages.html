@@ -44,11 +44,8 @@
   .msg-expl { font-size: 13px; color: hsl(var(--text-1)); }
   .msg-expl mark { background: hsl(var(--frost-3) / 0.4); color: inherit; padding: 0 1px; }
   .msg-expl a { color: hsl(var(--frost-2)); }
-  .msg-src { font-size: 12px; color: hsl(var(--text-2)); }
-  .msg-src code { color: hsl(var(--text-1)); }
-  .msg-verline { display: flex; flex-wrap: wrap; gap: calc(var(--step) * 1) calc(var(--step) * 5); font-size: 12px; color: hsl(var(--text-2)); }
-  .msg-verline b { color: hsl(var(--text-1)); font-weight: 600; }
   .msg-wiki { font-size: 12px; }
+  .msg-badges b { color: hsl(var(--text-2)); font-weight: 600; font-size: 12px; }
 
   .idle {
     text-align: center; padding: calc(var(--step) * 10) calc(var(--step) * 4);
@@ -71,9 +68,7 @@
       <span class="badge b-frost">3.7 · 5.0</span>
     </div>
     <p class="mid" style="max-width:74ch">
-      Every &ldquo;You feel &hellip;&rdquo; and &ldquo;You hear &hellip;&rdquo; message documented on
-      NetHackWiki, cross-checked against the actual <code>You_feel()</code> / <code>You_hear()</code>
-      call sites in the NetHack source. Start typing to search &mdash; nothing is shown until you do.
+      What that message meant. Start typing to search.
     </p>
   </header>
 
@@ -104,58 +99,17 @@
 
   <!-- ===================== notes ===================== -->
   <section class="card">
-    <div class="card-hd"><span class="label">How this is built, and what the badges mean</span></div>
-    <div class="card-bd stack">
-      <details open>
-        <summary>Where the messages come from</summary>
-        <div class="stack-tight" style="font-size:12px;color:hsl(var(--text-1))">
-          <p style="margin-bottom:0">The corpus is scraped from the
-            <a href="https://nethackwiki.com/wiki/You_feel" class="wiki" rel="noopener">You feel</a> and
-            <a href="https://nethackwiki.com/wiki/You_hear" class="wiki" rel="noopener">You hear</a>
-            wiki pages by <code>scripts/gen-messages.py</code>, which parses each page's
-            <code>{{message|text|explanation}}</code> templates. That gives the message text, its
-            wiki-written explanation, and every wikilink inside that explanation.</p>
-          <p style="margin-bottom:0">Every one of those wiki-sourced messages was then handed to a
-            fleet of subagents that grepped the actual <code>NetHack-3.7</code> and
-            <code>NetHack-5.0</code> branches for the literal C string that produces it, recording the
-            exact <code>file:line</code> when found. A second sweep went the other direction: it read
-            every <code>You_feel()</code>/<code>You_hear()</code> call site in 5.0's source and flagged
-            ones that don't correspond to any wiki-documented message at all &mdash; those are marked
-            &ldquo;5.0-only, not on the wiki&rdquo;.</p>
-          <p style="margin-bottom:0">That reverse sweep can only speak for 5.0, so a final
-            deterministic pass in <code>gen-messages.py</code> closes the gap: once a call site is
-            known in 5.0, its exact C string literal is known too, and looking that literal up in the
-            3.7 tree is a plain search rather than an open-ended read. Where the same literal appears
-            at several call sites, the one in the same file and nearest the 5.0 line wins; where it's
-            ambiguous across files, the entry is left unverified rather than guessed at. That pass
-            resolves 188 of the 190 sweep entries against 3.7.</p>
-        </div>
-      </details>
-      <details>
-        <summary>What the version badges mean</summary>
-        <div class="stack-tight" style="font-size:12px;color:hsl(var(--text-1))">
-          <p style="margin-bottom:0">
-            <span class="badge b-green">present</span> &mdash; a source line producing this exact text
-            was found in that branch; the <code>file:line</code> and literal C string are shown.
-            <span class="badge b-red">absent</span> &mdash; the wiki's wording was searched for and not
-            found; the closest source text found instead is noted, in case the wiki is simply out of
-            date rather than wrong. <span class="badge b-yellow">unverified</span> &mdash; the search
-            was inconclusive, not that the message is known to be missing: the call site is built
-            entirely from format strings (<code>You_feel("%s!", abil-&gt;gainstr)</code> carries no
-            literal to look up), or the literal it does carry appears at too many call sites to pick
-            one. Unverified means unknown, and only five entries are still in that state.
-          </p>
-          <p id="stats-note" style="margin-bottom:0"></p>
-        </div>
-      </details>
-      <details>
-        <summary>Search scope</summary>
-        <div class="stack-tight" style="font-size:12px;color:hsl(var(--text-1))">
-          <p style="margin-bottom:0">Matches the message text and its explanation, not the source
-            file paths or literal C strings. Punctuation is ignored on both sides, so
-            &ldquo;can't&rdquo; and &ldquo;cant&rdquo; find the same rows.</p>
-        </div>
-      </details>
+    <div class="card-bd">
+      <p class="small dim" style="margin:0">
+        Text and explanations from NetHackWiki's
+        <a href="https://nethackwiki.com/wiki/You_feel" class="wiki" rel="noopener">You feel</a> and
+        <a href="https://nethackwiki.com/wiki/You_hear" class="wiki" rel="noopener">You hear</a>,
+        each one checked against the NetHack source so the per-version badge says whether that
+        release actually prints it. <span class="badge b-green">present</span> found,
+        <span class="badge b-red">absent</span> not in that version,
+        <span class="badge b-yellow">unverified</span> couldn't tell.
+        <span id="stats-note"></span>
+      </p>
     </div>
   </section>
 
@@ -221,36 +175,21 @@
     return '<span class="badge ' + b.cls + '">' + esc(b.label) + '</span>';
   }
 
+  /* Just the verdict per version. The file:line and literal C string behind it live in
+     data/messages.json for anyone who wants them; on the page they were noise. */
   function verLine(entry) {
     return ['3.7', '5.0'].map(function (v) {
       var info = entry.versions[v] || {};
-      var loc = info.status === 'present' && info.file
-        ? ' <code>' + esc(info.file) + ':' + info.line + '</code>'
-        : '';
-      return '<span><b>' + v + '</b> ' + statusBadge(info.status) + loc + '</span>';
+      return '<span><b>' + v + '</b> ' + statusBadge(info.status) + '</span>';
     }).join('');
-  }
-
-  function versionDetail(entry) {
-    var out = [];
-    ['3.7', '5.0'].forEach(function (v) {
-      var info = entry.versions[v] || {};
-      if (info.status === 'present' && info.literal) {
-        out.push('<div class="msg-src"><b>' + v + '</b> <code>' + esc(info.file) + ':' +
-          info.line + '</code> &mdash; <code>' + esc(info.literal) + '</code></div>');
-      } else if (info.note) {
-        out.push('<div class="msg-src"><b>' + v + '</b> ' + esc(info.note) + '</div>');
-      }
-    });
-    return out.join('');
   }
 
   function card(entry, query) {
     var prefixLabel = entry.prefix === 'you-feel' ? 'You feel' : 'You hear';
     var wiki = entry.source_page
       ? '<a class="wiki msg-wiki" href="' + wikiUrl(entry.source_page) +
-        '" target="_blank" rel="noopener">' + esc(entry.source_page) + ' on the wiki</a>'
-      : '<span class="small dim msg-wiki">not documented on the wiki &mdash; found via source sweep</span>';
+        '" target="_blank" rel="noopener">wiki</a>'
+      : '<span class="small dim msg-wiki">not on the wiki</span>';
 
     return (
       '<div class="msg-card">' +
@@ -264,7 +203,6 @@
           (entry.explanation_html
             ? '<div class="msg-expl">' + highlightHtml(entry.explanation_html, query) + '</div>'
             : '<div class="msg-expl dim">No explanation on the wiki.</div>') +
-          versionDetail(entry) +
           wiki +
         '</div>' +
       '</div>'
@@ -287,8 +225,7 @@
     if (!state.q.trim()) {
       el('results').innerHTML =
         '<div class="idle"><div class="big-hint">Type to search ' + DATA.entries.length +
-        ' messages.</div>Try a word from a message you remember, or something from its explanation ' +
-        '&mdash; &ldquo;quickness&rdquo;, &ldquo;vault&rdquo;, &ldquo;footsteps&rdquo;.</div>';
+        ' messages.</div>&ldquo;quickness&rdquo;, &ldquo;vault&rdquo;, &ldquo;footsteps&rdquo;&hellip;</div>';
       return;
     }
 
@@ -332,14 +269,9 @@
         byStatus[v][s] = (byStatus[v][s] || 0) + 1;
       });
     });
-    var wikiSourced = entries.filter(function (e) { return e.source_page; }).length;
+    var unsure = (byStatus['3.7'].unverified || 0) + (byStatus['5.0'].unverified || 0);
     el('stats-note').textContent =
-      entries.length + ' messages indexed (' + wikiSourced + ' from the wiki, ' +
-      (entries.length - wikiSourced) + ' from the 5.0-only source sweep). 3.7: ' +
-      (byStatus['3.7'].present || 0) + ' present, ' + (byStatus['3.7'].absent || 0) +
-      ' absent, ' + (byStatus['3.7'].unverified || 0) + ' unverified. 5.0: ' +
-      (byStatus['5.0'].present || 0) + ' present, ' + (byStatus['5.0'].absent || 0) +
-      ' absent, ' + (byStatus['5.0'].unverified || 0) + ' unverified.';
+      entries.length + ' messages, ' + unsure + ' unverified.';
   }
 
   /* ---------- boot ---------- */

@@ -505,7 +505,10 @@ def main():
                 unverified_count += 1
                 break
 
-    extra_ids = set(by_id) - {e["id"] for e in entries}
+    # sorted(), not set order: Python randomizes string hashing per process, so iterating the
+    # set directly reshuffled these 190 entries on every run and made data/messages.json diff
+    # by thousands of lines without a single content change.
+    extra_ids = sorted(set(by_id) - {e["id"] for e in entries})
     new_entries = [by_id[i] for i in extra_ids if by_id[i].get("prefix") in ("you-feel", "you-hear")]
     for e in new_entries:
         e.setdefault("text_norm", norm_text(e["text"]))
