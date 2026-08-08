@@ -41,6 +41,13 @@
     border-bottom: 1px dotted hsl(var(--frost-1) / 0.4);
   }
   .prob-num { font-size: 12px; color: hsl(var(--text-1)); }
+  .sort-btn {
+    appearance: none; background: none; border: 0; border-bottom: 1px dotted currentColor;
+    color: inherit; cursor: pointer; font: inherit; letter-spacing: inherit;
+    padding: 0; text-align: left; text-transform: inherit;
+  }
+  .sort-btn:hover, .sort-btn:focus-visible { color: hsl(var(--text-0)); }
+  .sort-arrow { color: hsl(var(--frost-2)); }
   .deriv { font-size: 12px; color: hsl(var(--text-1)); }
   .deriv-branch { margin: calc(var(--step) * 2) 0 0; }
   .deriv-step { padding-left: calc(var(--step) * 4); color: hsl(var(--text-2)); }
@@ -257,19 +264,20 @@
 
 <script src="/assets/nav.js"></script>
 <script src="/assets/price-engine.js"></script>
+<script src="/assets/price-ui.js"></script>
 <script>
 (function () {
   'use strict';
 
   var E = window.PriceEngine;
+  var UI = window.PriceUI;
 
   var CLASS_LABEL = {
     weapon: 'weapon', armor: 'armor', ring: 'ring', amulet: 'amulet', tool: 'tool',
     food: 'food', potion: 'potion', scroll: 'scroll', spellbook: 'spellbook',
     wand: 'wand', gem: 'gem', rock: 'rock', other: 'other'
   };
-  var CLASS_ORDER = ['weapon', 'armor', 'ring', 'amulet', 'tool', 'food', 'potion',
-    'scroll', 'spellbook', 'wand', 'gem', 'rock', 'other'];
+  var CLASS_ORDER = UI.CLASS_ORDER;
 
   var DATA = null;
   var nextId = 1;
@@ -278,6 +286,8 @@
     version: '3.7-5.0',
     ench: 0,
     classes: null, /* Set-like object; null = all */
+    sort: 'chance',
+    sortDir: -1,
     obs: [newObs()]
   };
 
@@ -590,9 +600,8 @@
         var p = E.classProbability(it, t, counts);
         classesSeen[it.class] = true;
         return { item: it, p: p };
-      }).sort(function (a, b2) {
-        return (b2.p.known ? b2.p.pct : -1) - (a.p.known ? a.p.pct : -1);
       });
+      items = UI.sortCandidates(items, state.sort, state.sortDir);
       totalItems += items.length;
       groups.push({
         base: b,
@@ -610,6 +619,19 @@
   }
 
   /* ---------- render: results ---------- */
+
+  function sortHead(key, label, base) {
+    var active = state.sort === key;
+    var direction = state.sortDir > 0 ? 'ascending' : 'descending';
+    return '<th' + (active ? ' aria-sort="' + direction + '"' : '') + '>' +
+      '<button type="button" class="sort-btn" data-sort="' + key + '" data-base="' + base +
+        '" aria-label="Sort by ' + esc(label) + (active ? ', currently ' + direction : '') + '">' +
+        esc(label) + (active
+          ? ' <span class="sort-arrow" aria-hidden="true">' +
+            (state.sortDir > 0 ? '&#9650;' : '&#9660;') + '</span>'
+          : '') +
+      '</button></th>';
+  }
 
   function renderResults(groups, totalItems, bases, perObs, branchMap, queries, maxPct, classesSeen,
                          emptyBases) {
@@ -686,13 +708,13 @@
         return '<tr>' +
           '<td><a class="wiki" href="' + wikiUrl(it.name) + '" target="_blank" rel="noopener">' +
             esc(it.name) + '</a>' +
-            (it.magic ? ' <span class="badge b-purple">magic</span>' : '') +
             (state.ench > 0
               ? '<div class="small dim">' + (bumped
                   ? 'base ' + it.cost + ' + 10×' + state.ench
                   : 'base ' + it.cost + ', unaffected by enchantment') + '</div>'
               : '') + '</td>' +
-          '<td class="dim">' + esc(CLASS_LABEL[it.class] || it.class) + '</td>' +
+          '<td><span class="badge ' + UI.classBadgeClass(it.class) + '">' +
+            esc(CLASS_LABEL[it.class] || it.class) + '</span></td>' +
           '<td>' + appearanceCell(it) + '</td>' +
           '<td class="prob-cell">' + pct + bar + '</td>' +
         '</tr>';
@@ -712,8 +734,12 @@
           '</div>' +
           '<div class="card-bd stack">' +
             '<div class="tbl-scroll"><table class="tbl">' +
-              '<thead><tr><th>Item</th><th>Class</th><th>Fixed appearance</th>' +
-              '<th>Chance within class</th></tr></thead>' +
+              '<thead><tr>' +
+                sortHead('item', 'Item', g.base) +
+                sortHead('class', 'Class', g.base) +
+                '<th>Fixed appearance</th>' +
+                sortHead('chance', 'Chance within class', g.base) +
+              '</tr></thead>' +
               '<tbody>' + rows + '</tbody>' +
             '</table></div>' +
             derivation(g.base, queries, branchMap) +
@@ -922,6 +948,19 @@
     }
     renderObs();
     compute();
+  });
+
+  el('results').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-sort]');
+    if (!b) return;
+    var next = UI.nextSort(state.sort, state.sortDir, b.getAttribute('data-sort'));
+    var base = b.getAttribute('data-base');
+    state.sort = next.key;
+    state.sortDir = next.direction;
+    computeResults();
+    var again = document.querySelector(
+      '#results button[data-sort="' + state.sort + '"][data-base="' + base + '"]');
+    if (again) again.focus();
   });
 
   /* ---------- boot ---------- */
