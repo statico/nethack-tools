@@ -284,6 +284,8 @@
   'use strict';
 
   var KEY = 'nethack-tools:checklist:v1';
+  /* Same key as Price ID — Reset clears remembered Charisma for a new run. */
+  var PRICE_CHA_KEY = 'nethack-tools:price-id:cha';
   var WIKI = 'https://nethackwiki.com/wiki/';
   var DATA_URL = '/data/checklist.json';
 
@@ -727,7 +729,10 @@
     state = blankState();
     state.deaths = seedDeaths();
     applyDefaults();
-    try { localStorage.removeItem(KEY); } catch (e) {}
+    try {
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(PRICE_CHA_KEY);
+    } catch (e) {}
     renderAll();
     save(true);
   });

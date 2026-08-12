@@ -91,4 +91,32 @@ test('every supported class has an existing colored badge style', () => {
   assert.equal(UI.classBadgeClass('unknown-class'), 'b-dim');
 });
 
+test('CHA_KEY is the shared Price ID Charisma storage key', () => {
+  assert.equal(UI.CHA_KEY, 'nethack-tools:price-id:cha');
+});
+
+test('normalizeCha accepts integers in 3–25 and rejects the rest', () => {
+  assert.equal(UI.normalizeCha('18'), 18);
+  assert.equal(UI.normalizeCha(3), 3);
+  assert.equal(UI.normalizeCha(25), 25);
+  assert.equal(UI.normalizeCha('2'), null);
+  assert.equal(UI.normalizeCha('26'), null);
+  assert.equal(UI.normalizeCha(''), null);
+  assert.equal(UI.normalizeCha(null), null);
+  assert.equal(UI.normalizeCha('nope'), null);
+});
+
+test('chaOrDefault falls back to 11', () => {
+  assert.equal(UI.chaOrDefault('16'), 16);
+  assert.equal(UI.chaOrDefault(null), 11);
+  assert.equal(UI.chaOrDefault('99'), 11);
+});
+
+test('clampCha clamps live input into 3–25', () => {
+  assert.equal(UI.clampCha('1'), 3);
+  assert.equal(UI.clampCha('18'), 18);
+  assert.equal(UI.clampCha('99'), 25);
+  assert.equal(UI.clampCha(''), 11);
+});
+
 console.log(`\n${passed} passed, 0 failed\n`);

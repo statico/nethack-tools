@@ -66,11 +66,39 @@ var PriceUI = (function () {
     return { key: selectedKey, direction: selectedKey === 'chance' ? -1 : 1 };
   }
 
+  /* Shared with checklist Reset so clearing the run clears remembered Cha. */
+  var CHA_KEY = 'nethack-tools:price-id:cha';
+  var DEFAULT_CHA = 11;
+
+  function normalizeCha(raw) {
+    var v = parseInt(raw, 10);
+    if (!isFinite(v) || v < 3 || v > 25) return null;
+    return v;
+  }
+
+  function chaOrDefault(raw) {
+    var v = normalizeCha(raw);
+    return v === null ? DEFAULT_CHA : v;
+  }
+
+  /* Live input: clamp rather than reject so typing "18" does not snap to 11
+     after the first digit. */
+  function clampCha(raw) {
+    var v = parseInt(raw, 10);
+    if (!isFinite(v)) return DEFAULT_CHA;
+    return Math.max(3, Math.min(25, v));
+  }
+
   return {
     CLASS_ORDER: CLASS_ORDER,
+    CHA_KEY: CHA_KEY,
+    DEFAULT_CHA: DEFAULT_CHA,
     classBadgeClass: classBadgeClass,
     sortCandidates: sortCandidates,
-    nextSort: nextSort
+    nextSort: nextSort,
+    normalizeCha: normalizeCha,
+    chaOrDefault: chaOrDefault,
+    clampCha: clampCha
   };
 })();
 

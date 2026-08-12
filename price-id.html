@@ -281,6 +281,7 @@
 
   var DATA = null;
   var nextId = 1;
+  var rememberedCha = loadRememberedCha();
 
   var state = {
     version: '3.7-5.0',
@@ -291,12 +292,39 @@
     obs: [newObs()]
   };
 
+  function loadRememberedCha() {
+    try {
+      return UI.chaOrDefault(localStorage.getItem(UI.CHA_KEY));
+    } catch (e) {
+      return UI.DEFAULT_CHA;
+    }
+  }
+
+  function saveRememberedCha(cha) {
+    try { localStorage.setItem(UI.CHA_KEY, String(cha)); } catch (e) {}
+  }
+
+  /* One character, one Cha: changing any observation updates every field and
+     persists the value for the next visit. exceptInput is left alone so a
+     mid-keystroke value is not rewritten under the caret. */
+  function setAllCha(cha, exceptInput) {
+    rememberedCha = cha;
+    state.obs.forEach(function (o) {
+      o.cha = cha;
+      var input = document.getElementById('cha' + o.id);
+      if (input && input !== exceptInput && input.value !== String(cha)) input.value = cha;
+      var hint = el('chahint' + o.id);
+      if (hint && o.direction !== 'sell') hint.textContent = chaHint(cha);
+    });
+    saveRememberedCha(cha);
+  }
+
   function newObs() {
     return {
       id: nextId++,
       price: '',
       direction: 'buy',
-      cha: 11,
+      cha: rememberedCha,
       touristy: false,
       dunce: false,
       angry: false
@@ -910,10 +938,7 @@
     if (k === 'price') {
       o.price = t.value;
     } else if (k === 'cha') {
-      var v = parseInt(t.value, 10);
-      o.cha = isFinite(v) ? Math.max(3, Math.min(25, v)) : 11;
-      var hint = el('chahint' + o.id);
-      if (hint) hint.textContent = chaHint(o.cha);
+      setAllCha(UI.clampCha(t.value), t);
     } else {
       o[k] = t.checked;
     }
