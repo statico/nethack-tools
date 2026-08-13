@@ -31,6 +31,7 @@
         '</a>' +
         '<div class="nav-links">' + links + '</div>' +
         '<div class="nav-spacer"></div>' +
+        '<a class="btn nav-play" href="https://github.com/statico/nethack-tiles-client#readme" rel="noopener" title="Play NetHack with the tiles client">Play</a>' +
         '<div class="nav-links">' +
           '<a href="https://github.com/statico/nethack-tools" rel="noopener">Source</a>' +
           '<button type="button" class="theme-btn" id="theme-btn"></button>' +

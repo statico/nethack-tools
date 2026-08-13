@@ -190,6 +190,16 @@ code, kbd, pre { font-family: var(--mono); }
 }
 .nav-spacer { margin-left: auto; }
 
+/* Play sits after the spacer as its own button, not a nav-link, so it keeps
+   .btn chrome instead of picking up the underline-tab treatment. */
+.nav-play {
+  align-self: center;
+  flex-shrink: 0;
+  text-decoration: none;
+  padding-block: calc(var(--step) * 1);
+}
+.nav-play:hover { text-decoration: none; }
+
 /* Theme switcher — sits in the nav and reads like the links next to it */
 .theme-btn {
   font-family: var(--mono); font-size: 12px;
@@ -216,7 +226,7 @@ code, kbd, pre { font-family: var(--mono); }
      direct flex child and they all wrap as one run, instead of each group
      claiming its own line. */
   .nav-links { display: contents; }
-  .nav-links a, .theme-btn { padding-block: calc(var(--step) * 1.5); }
+  .nav-links a, .theme-btn, .nav-play { padding-block: calc(var(--step) * 1.5); }
 }
 
 /* Card -------------------------------------------------------------------- */
